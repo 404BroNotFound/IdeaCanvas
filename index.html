@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -41,7 +41,13 @@
           <button class="back-button">‹</button>
           <div><button id="boardTitle" class="document-title">Product strategy map</button><p><span class="status-dot"></span><span id="saveStatus">All changes saved</span></p></div>
         </div>
-        <div class="header-center"><button id="undoButton">↶</button><button id="redoButton">↷</button><span></span><button id="gridButton">Grid</button></div>
+        <div class="header-center">
+          <button id="undoButton" title="Undo">↶</button>
+          <button id="redoButton" title="Redo">↷</button>
+          <span></span>
+          <button id="searchButton" class="search-trigger" title="Find on canvas">⌕ Find</button>
+          <button id="gridButton" title="Toggle grid">Grid</button>
+        </div>
         <div class="header-actions">
           <div class="collaborators"><span class="avatar coral">AN</span><span class="avatar aqua">MK</span><span class="avatar count">+2</span></div>
           <button class="preview-button" id="saveButton">Save</button>
@@ -64,6 +70,11 @@
           </section>
         </div>
         <div class="canvas-controls"><button id="zoomOutButton">−</button><span id="zoomLabel">100%</span><button id="zoomInButton">＋</button><button id="fitButton">Fit</button></div>
+        <div class="selection-actions" id="selectionActions" aria-label="Selected object actions">
+          <button id="duplicateButton" title="Duplicate selected object">Duplicate</button>
+          <span></span>
+          <button id="deleteButton" class="danger-action" title="Delete selected object">Delete</button>
+        </div>
       </main>
     </section>
 
@@ -86,6 +97,13 @@
         <div class="segment-control" id="strokeWidths"><button class="active" data-width="2"><i class="thin"></i>Fine</button><button data-width="4"><i class="medium"></i>Medium</button><button data-width="7"><i class="bold"></i>Bold</button></div>
       </section>
       <section class="property-section"><label class="property-label">Canvas</label><button class="wide-action" id="templateButton"><span>✦</span><span><b>Start with a layout</b><small>Mind maps, flows and more</small></span><strong>›</strong></button></section>
+      <section class="property-section">
+        <label class="property-label">Workspace</label>
+        <div class="workspace-actions">
+          <button id="centerContentButton"><span>⌗</span>Center content</button>
+          <button id="clearCanvasButton" class="danger-text"><span>×</span>Clear canvas</button>
+        </div>
+      </section>
       <div class="inspector-tip"><span>PRO TIP</span><p>Hold <kbd>Space</kbd> and drag to move around your canvas.</p></div>
     </aside>
   </div>
@@ -102,7 +120,15 @@
 
   <dialog class="shortcut-dialog" id="shortcutDialog">
     <div class="dialog-heading"><div><span>WORK FASTER</span><h2>Keyboard shortcuts</h2></div><button id="closeShortcuts">×</button></div>
-    <div class="shortcut-grid"><span>Select <kbd>V</kbd></span><span>Pan <kbd>H</kbd></span><span>Pencil <kbd>P</kbd></span><span>Arrow <kbd>L</kbd></span><span>Rectangle <kbd>R</kbd></span><span>Note <kbd>N</kbd></span><span>Text <kbd>T</kbd></span><span>Delete <kbd>⌫</kbd></span></div>
+    <div class="shortcut-grid"><span>Select <kbd>V</kbd></span><span>Pan <kbd>H</kbd></span><span>Pencil <kbd>P</kbd></span><span>Arrow <kbd>L</kbd></span><span>Rectangle <kbd>R</kbd></span><span>Note <kbd>N</kbd></span><span>Text <kbd>T</kbd></span><span>Delete <kbd>⌫</kbd></span><span>Find <kbd>Ctrl F</kbd></span><span>Duplicate <kbd>Ctrl D</kbd></span></div>
+  </dialog>
+  <dialog class="search-dialog" id="searchDialog">
+    <div class="search-box">
+      <span>⌕</span>
+      <input id="searchInput" type="search" placeholder="Find text on this canvas…" autocomplete="off">
+      <kbd>Esc</kbd>
+    </div>
+    <div class="search-results" id="searchResults"><p>Start typing to search your canvas.</p></div>
   </dialog>
   <div class="toast" id="toast" role="status"></div>
   <script src="app.js"></script>

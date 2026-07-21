@@ -1,4 +1,4 @@
-﻿"""API tests for the IdeaCanvas Flask backend."""
+"""API tests for the IdeaCanvas Flask backend."""
 
 from __future__ import annotations
 
@@ -31,6 +31,16 @@ class IdeaCanvasApiTests(unittest.TestCase):
         response = self.client.get("/api/health")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["status"], "ok")
+
+    def test_frontend_is_served_without_exposing_backend_source(self) -> None:
+        for path in ("/", "/styles.css", "/app.js"):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200)
+            response.close()
+
+        blocked_response = self.client.get("/server.py")
+        self.assertEqual(blocked_response.status_code, 404)
+        blocked_response.close()
 
     def test_board_round_trip(self) -> None:
         board = {
@@ -65,4 +75,3 @@ class IdeaCanvasApiTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

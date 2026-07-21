@@ -17,6 +17,7 @@ BASE_DIRECTORY = Path(__file__).resolve().parent
 BOARD_DIRECTORY = BASE_DIRECTORY / "data" / "boards"
 BOARD_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
 MAX_REQUEST_BYTES = 5 * 1024 * 1024
+PUBLIC_ASSETS = {"app.js", "styles.css"}
 
 app = Flask(__name__, static_folder=None)
 app.config["MAX_CONTENT_LENGTH"] = MAX_REQUEST_BYTES
@@ -43,7 +44,9 @@ def index() -> Response:
 
 
 @app.get("/<path:filename>")
-def frontend_asset(filename: str) -> Response:
+def frontend_asset(filename: str) -> tuple[Response, int] | Response:
+    if filename not in PUBLIC_ASSETS:
+        return jsonify({"error": "Not found"}), 404
     return send_from_directory(BASE_DIRECTORY, filename)
 
 

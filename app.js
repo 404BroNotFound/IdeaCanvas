@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 
 /* ========================================================================== 
    IdeaCanvas
@@ -19,6 +19,10 @@ const elements = {
   zoomLabel: document.querySelector("#zoomLabel"),
   templateDialog: document.querySelector("#templateDialog"),
   shortcutDialog: document.querySelector("#shortcutDialog"),
+  searchDialog: document.querySelector("#searchDialog"),
+  searchInput: document.querySelector("#searchInput"),
+  searchResults: document.querySelector("#searchResults"),
+  selectionActions: document.querySelector("#selectionActions"),
 };
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
@@ -58,6 +62,7 @@ let interaction = null;
 let idCounter = 0;
 let spacePressed = false;
 let toastTimer = null;
+let autoSaveTimer = null;
 
 // Small utilities -----------------------------------------------------------
 function queryAll(selector, root = document) {
@@ -102,6 +107,7 @@ function showToast(message) {
 function markUnsaved() {
   elements.saveStatus.textContent = "Unsaved changes";
   document.querySelector(".status-dot").style.background = "#e67a42";
+  scheduleAutoSave();
 }
 
 function markSaved() {
@@ -184,12 +190,14 @@ function setTool(toolName) {
 
 function clearSelection() {
   queryAll(".node.selected").forEach((node) => node.classList.remove("selected"));
+  elements.selectionActions.classList.remove("visible");
 }
 
 function selectNode(nodeId) {
   clearSelection();
   const nodeElement = document.querySelector(`[data-id="${nodeId}"]`);
   nodeElement?.classList.add("selected");
+  elements.selectionActions.classList.toggle("visible", Boolean(nodeElement));
   const node = getNodeById(nodeId);
   if (node) elements.inspectorTitle.textContent = node.type === "note" ? "Sticky note" : node.type;
 }
@@ -450,6 +458,112 @@ function handlePointerUp() {
   elements.viewport.classList.remove("panning");
 }
 
+// Selection, search, and workspace actions ---------------------------------
+function duplicateSelectedNode() {
+  const selectedElement = getSelectedNodeElement();
+  if (!selectedElement) return;
+
+  const source = getNodeById(selectedElement.dataset.id);
+  takeSnapshot();
+  const duplicate = {
+    ...source,
+    id: createId(),
+    x: source.x + 28,
+    y: source.y + 28,
+  };
+  state.nodes.push(duplicate);
+  renderCanvas();
+  selectNode(duplicate.id);
+  showToast("Object duplicated");
+}
+
+function centerContent() {
+  if (!state.nodes.length) {
+    resetView();
+    return;
+  }
+
+  const bounds = state.nodes.reduce((result, node) => ({
+    left: Math.min(result.left, node.x),
+    top: Math.min(result.top, node.y),
+    right: Math.max(result.right, node.x + node.width),
+    bottom: Math.max(result.bottom, node.y + node.height),
+  }), { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
+
+  const availableWidth = elements.viewport.clientWidth;
+  const availableHeight = elements.viewport.clientHeight;
+  const contentWidth = bounds.right - bounds.left;
+  const contentHeight = bounds.bottom - bounds.top;
+  state.zoom = Math.max(0.35, Math.min(1.2, availableWidth / (contentWidth + 180), availableHeight / (contentHeight + 180)));
+  state.panX = availableWidth / 2 - ((bounds.left + bounds.right) / 2) * state.zoom;
+  state.panY = availableHeight / 2 - ((bounds.top + bounds.bottom) / 2) * state.zoom;
+  updateWorldTransform();
+}
+
+function clearCanvas() {
+  if (!state.nodes.length && !state.drawings.length) return;
+  if (!window.confirm("Clear every object from this canvas? You can undo this action.")) return;
+
+  takeSnapshot();
+  state.nodes = [];
+  state.drawings = [];
+  state.connections = [];
+  interaction = null;
+  clearSelection();
+  renderCanvas();
+  showToast("Canvas cleared — use Undo to restore it");
+}
+
+function openCanvasSearch() {
+  elements.searchDialog.showModal();
+  elements.searchInput.value = "";
+  renderSearchResults("");
+  requestAnimationFrame(() => elements.searchInput.focus());
+}
+
+function renderSearchResults(query) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) {
+    elements.searchResults.innerHTML = "<p>Start typing to search your canvas.</p>";
+    return;
+  }
+
+  const matches = state.nodes.filter((node) => node.text.toLowerCase().includes(normalizedQuery));
+  if (!matches.length) {
+    elements.searchResults.innerHTML = `<p>No objects found for “${escapeHtml(query)}”.</p>`;
+    return;
+  }
+
+  elements.searchResults.innerHTML = matches.map((node) => `
+    <button class="search-result" data-result-id="${node.id}">
+      <span class="result-icon">${node.type.slice(0, 1).toUpperCase()}</span>
+      <span><b>${escapeHtml(node.text)}</b><small>${node.type}</small></span>
+      <strong>→</strong>
+    </button>
+  `).join("");
+}
+
+function focusSearchResult(nodeId) {
+  const node = getNodeById(nodeId);
+  if (!node) return;
+
+  elements.searchDialog.close();
+  const centerX = node.x + node.width / 2;
+  const centerY = node.y + node.height / 2;
+  state.panX = elements.viewport.clientWidth / 2 - centerX * state.zoom;
+  state.panY = elements.viewport.clientHeight / 2 - centerY * state.zoom;
+  updateWorldTransform();
+  selectNode(node.id);
+
+  const nodeElement = document.querySelector(`[data-id="${node.id}"]`);
+  nodeElement?.classList.add("search-match");
+  setTimeout(() => nodeElement?.classList.remove("search-match"), 900);
+}
+
+function scheduleAutoSave() {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => saveBoard({ silent: true }), 1400);
+}
 // Canvas zoom ---------------------------------------------------------------
 function zoomAtPoint(nextZoom, clientX, clientY) {
   const previousZoom = state.zoom;
@@ -576,7 +690,7 @@ function loadLocalBoard() {
   }
 }
 
-async function saveBoard() {
+async function saveBoard({ silent = false } = {}) {
   const board = buildBoardPayload();
 
   // Local storage keeps the app usable if the Python server is unavailable.
@@ -591,11 +705,11 @@ async function saveBoard() {
 
     if (!response.ok) throw new Error(`Server returned ${response.status}`);
     markSaved();
-    showToast("Saved securely to the server");
+    if (!silent) showToast("Saved securely to the server");
   } catch (error) {
     console.warn("Python backend unavailable; saved locally instead.", error);
     markSaved();
-    showToast("Saved locally — server unavailable");
+    if (!silent) showToast("Saved locally — server unavailable");
   }
 }
 
@@ -650,6 +764,16 @@ function handleKeyDown(event) {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
     event.preventDefault();
     event.shiftKey ? redo() : undo();
+  }
+
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d") {
+    event.preventDefault();
+    duplicateSelectedNode();
+  }
+
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "f") {
+    event.preventDefault();
+    openCanvasSearch();
   }
 
   if (event.key === "Delete" || event.key === "Backspace") deleteSelectedNode();
@@ -707,6 +831,17 @@ function bindInterfaceEvents() {
   document.querySelector("#zoomInButton").addEventListener("click", () => zoomAtPoint(state.zoom + 0.1, window.innerWidth / 2, window.innerHeight / 2));
   document.querySelector("#zoomOutButton").addEventListener("click", () => zoomAtPoint(state.zoom - 0.1, window.innerWidth / 2, window.innerHeight / 2));
   document.querySelector("#fitButton").addEventListener("click", resetView);
+  document.querySelector("#searchButton").addEventListener("click", openCanvasSearch);
+  document.querySelector("#duplicateButton").addEventListener("click", duplicateSelectedNode);
+  document.querySelector("#deleteButton").addEventListener("click", deleteSelectedNode);
+  document.querySelector("#centerContentButton").addEventListener("click", centerContent);
+  document.querySelector("#clearCanvasButton").addEventListener("click", clearCanvas);
+
+  elements.searchInput.addEventListener("input", (event) => renderSearchResults(event.target.value));
+  elements.searchResults.addEventListener("click", (event) => {
+    const result = event.target.closest("[data-result-id]");
+    if (result) focusSearchResult(result.dataset.resultId);
+  });
 
   document.querySelector("#templateButton").addEventListener("click", () => elements.templateDialog.showModal());
   document.querySelector("#closeTemplates").addEventListener("click", () => elements.templateDialog.close());
@@ -763,4 +898,3 @@ loadBoard();
 renderCanvas();
 updateWorldTransform();
 setTool(state.tool);
-
