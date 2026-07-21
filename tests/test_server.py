@@ -57,6 +57,15 @@ class IdeaCanvasApiTests(unittest.TestCase):
         self.assertEqual(load_response.status_code, 200)
         self.assertEqual(load_response.get_json()["title"], "Test board")
 
+        list_response = self.client.get("/api/boards")
+        self.assertEqual(list_response.status_code, 200)
+        self.assertEqual(list_response.get_json()["boards"][0]["id"], "test-board")
+        self.assertEqual(list_response.get_json()["boards"][0]["objectCount"], 0)
+
+        delete_response = self.client.delete("/api/boards/test-board")
+        self.assertEqual(delete_response.status_code, 200)
+        self.assertEqual(self.client.get("/api/boards/test-board").status_code, 404)
+
     def test_invalid_board_id_is_rejected(self) -> None:
         response = self.client.put(
             "/api/boards/invalid.id",

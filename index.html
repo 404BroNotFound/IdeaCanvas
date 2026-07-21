@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#111827">
-  <title>IdeaCanvas — Visual Thinking Studio</title>
+  <title>IdeaCanvas - Visual Thinking Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
@@ -26,6 +26,8 @@
         <button class="nav-tool" data-tool="ellipse" data-label="Ellipse"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8" ry="7"/></svg></button>
         <button class="nav-tool" data-tool="diamond" data-label="Decision"><svg viewBox="0 0 24 24"><path d="m12 3 9 9-9 9-9-9z"/></svg></button>
         <button class="nav-tool" data-tool="note" data-label="Note"><svg viewBox="0 0 24 24"><path d="M5 4h14v12l-4 4H5z"/><path d="M15 20v-4h4"/></svg></button>
+        <button class="nav-tool text-icon" data-tool="task" data-label="Task">&#10003;</button>
+        <button class="nav-tool text-icon" data-tool="frame" data-label="Section">F</button>
         <button class="nav-tool text-icon" data-tool="text" data-label="Text">T</button>
         <button class="nav-tool" data-tool="connector" data-label="Connect"><svg viewBox="0 0 24 24"><circle cx="6" cy="17" r="2"/><circle cx="18" cy="7" r="2"/><path d="M8 16c4 0 4-8 8-8"/></svg></button>
       </nav>
@@ -38,20 +40,20 @@
     <section class="workspace">
       <header class="workspace-header">
         <div class="document-info">
-          <button class="back-button">‹</button>
+          <button class="back-button" id="filesButton" title="Open files">&lsaquo;</button>
           <div><button id="boardTitle" class="document-title">Product strategy map</button><p><span class="status-dot"></span><span id="saveStatus">All changes saved</span></p></div>
         </div>
         <div class="header-center">
-          <button id="undoButton" title="Undo">↶</button>
-          <button id="redoButton" title="Redo">↷</button>
+          <button id="undoButton" title="Undo">?</button>
+          <button id="redoButton" title="Redo">?</button>
           <span></span>
-          <button id="searchButton" class="search-trigger" title="Find on canvas">⌕ Find</button>
+          <button id="searchButton" class="search-trigger" title="Find on canvas">? Find</button>
           <button id="gridButton" title="Toggle grid">Grid</button>
         </div>
         <div class="header-actions">
           <div class="collaborators"><span class="avatar coral">AN</span><span class="avatar aqua">MK</span><span class="avatar count">+2</span></div>
           <button class="preview-button" id="saveButton">Save</button>
-          <button class="primary-button" id="exportButton">Export <span>↗</span></button>
+          <button class="primary-button" id="exportButton">Export <span>?</span></button>
         </div>
       </header>
       <main class="canvas-viewport" id="viewport">
@@ -62,14 +64,15 @@
             <h1>Turn loose thoughts<br>into <em>clear direction.</em></h1>
             <p>Choose a starting point or pick a tool from the left.</p>
             <div class="start-options">
-              <button data-template="mindmap"><span class="option-icon violet">⌘</span><span><b>Map an idea</b><small>Start from one central thought</small></span><strong>→</strong></button>
-              <button data-template="flow"><span class="option-icon blue">⇢</span><span><b>Build a process</b><small>Lay out a step-by-step flow</small></span><strong>→</strong></button>
-              <button data-template="brainstorm"><span class="option-icon amber">✦</span><span><b>Run a brainstorm</b><small>Capture and group quick ideas</small></span><strong>→</strong></button>
+              <button data-template="mindmap"><span class="option-icon violet">?</span><span><b>Map an idea</b><small>Start from one central thought</small></span><strong>?</strong></button>
+              <button data-template="flow"><span class="option-icon blue">?</span><span><b>Build a process</b><small>Lay out a step-by-step flow</small></span><strong>?</strong></button>
+              <button data-template="brainstorm"><span class="option-icon amber">?</span><span><b>Run a brainstorm</b><small>Capture and group quick ideas</small></span><strong>?</strong></button>
             </div>
             <button class="blank-action" data-template="blank">or start with an empty canvas</button>
           </section>
         </div>
-        <div class="canvas-controls"><button id="zoomOutButton">−</button><span id="zoomLabel">100%</span><button id="zoomInButton">＋</button><button id="fitButton">Fit</button></div>
+        <div class="canvas-controls"><button id="zoomOutButton">-</button><span id="zoomLabel">100%</span><button id="zoomInButton">+</button><button id="fitButton">Fit</button></div>
+        <div class="tool-guide"><span id="toolGuideIcon">V</span><p><b id="toolGuideTitle">Select tool</b><small id="toolGuideText">Click an object to move, style, duplicate, or delete it.</small></p></div>
         <div class="selection-actions" id="selectionActions" aria-label="Selected object actions">
           <button id="duplicateButton" title="Duplicate selected object">Duplicate</button>
           <span></span>
@@ -79,7 +82,7 @@
     </section>
 
     <aside class="inspector" aria-label="Properties panel">
-      <div class="inspector-heading"><div><span>STYLE</span><h2 id="inspectorTitle">Canvas</h2></div><button id="collapseInspector">›</button></div>
+      <div class="inspector-heading"><div><span>STYLE</span><h2 id="inspectorTitle">Canvas</h2></div><button id="collapseInspector">&rsaquo;</button></div>
       <section class="property-section">
         <label class="property-label">Color</label>
         <div class="color-grid" id="colorGrid">
@@ -89,19 +92,19 @@
           <button class="color-swatch" data-color="#0f9f78" style="--color:#0f9f78"></button>
           <button class="color-swatch" data-color="#e67a42" style="--color:#e67a42"></button>
           <button class="color-swatch" data-color="#dc4f68" style="--color:#dc4f68"></button>
-          <label class="custom-color">＋<input type="color" id="customColor" value="#202630"></label>
+          <label class="custom-color">+<input type="color" id="customColor" value="#202630"></label>
         </div>
       </section>
       <section class="property-section">
         <label class="property-label">Stroke</label>
         <div class="segment-control" id="strokeWidths"><button class="active" data-width="2"><i class="thin"></i>Fine</button><button data-width="4"><i class="medium"></i>Medium</button><button data-width="7"><i class="bold"></i>Bold</button></div>
       </section>
-      <section class="property-section"><label class="property-label">Canvas</label><button class="wide-action" id="templateButton"><span>✦</span><span><b>Start with a layout</b><small>Mind maps, flows and more</small></span><strong>›</strong></button></section>
+      <section class="property-section"><label class="property-label">Canvas</label><button class="wide-action" id="templateButton"><span>&#10022;</span><span><b>Start with a layout</b><small>Mind maps, flows and more</small></span><strong>&rsaquo;</strong></button></section>
       <section class="property-section">
         <label class="property-label">Workspace</label>
         <div class="workspace-actions">
-          <button id="centerContentButton"><span>⌗</span>Center content</button>
-          <button id="clearCanvasButton" class="danger-text"><span>×</span>Clear canvas</button>
+          <button id="centerContentButton"><span>?</span>Center content</button>
+          <button id="clearCanvasButton" class="danger-text"><span>&times;</span>Clear canvas</button>
         </div>
       </section>
       <div class="inspector-tip"><span>PRO TIP</span><p>Hold <kbd>Space</kbd> and drag to move around your canvas.</p></div>
@@ -109,23 +112,33 @@
   </div>
 
   <dialog class="template-dialog" id="templateDialog">
-    <div class="dialog-heading"><div><span>STARTING LAYOUTS</span><h2>Give your thinking a head start</h2></div><button id="closeTemplates">×</button></div>
+    <div class="dialog-heading"><div><span>STARTING LAYOUTS</span><h2>Give your thinking a head start</h2></div><button id="closeTemplates">&times;</button></div>
     <p>Every layout stays completely editable.</p>
     <div class="template-list">
       <button data-template="mindmap"><span class="template-preview map-preview"><i></i><i></i><i></i><i></i><i></i></span><b>Mind map</b><small>Explore a central idea</small></button>
       <button data-template="flow"><span class="template-preview flow-preview"><i></i><i></i><i></i></span><b>Process flow</b><small>Clarify the next steps</small></button>
       <button data-template="brainstorm"><span class="template-preview note-preview"><i></i><i></i><i></i><i></i></span><b>Idea wall</b><small>Collect and sort thoughts</small></button>
+      <button data-template="roadmap"><span class="template-preview roadmap-preview"><i></i><i></i><i></i></span><b>Product roadmap</b><small>Plan outcomes over time</small></button>
+      <button data-template="kanban"><span class="template-preview kanban-preview"><i></i><i></i><i></i></span><b>Kanban board</b><small>Move work toward done</small></button>
+      <button data-template="wireframe"><span class="template-preview wireframe-preview"><i></i><i></i><i></i></span><b>App wireframe</b><small>Prototype a screen quickly</small></button>
     </div>
   </dialog>
 
   <dialog class="shortcut-dialog" id="shortcutDialog">
-    <div class="dialog-heading"><div><span>WORK FASTER</span><h2>Keyboard shortcuts</h2></div><button id="closeShortcuts">×</button></div>
-    <div class="shortcut-grid"><span>Select <kbd>V</kbd></span><span>Pan <kbd>H</kbd></span><span>Pencil <kbd>P</kbd></span><span>Arrow <kbd>L</kbd></span><span>Rectangle <kbd>R</kbd></span><span>Note <kbd>N</kbd></span><span>Text <kbd>T</kbd></span><span>Delete <kbd>⌫</kbd></span><span>Find <kbd>Ctrl F</kbd></span><span>Duplicate <kbd>Ctrl D</kbd></span></div>
+    <div class="dialog-heading"><div><span>WORK FASTER</span><h2>Keyboard shortcuts</h2></div><button id="closeShortcuts">&times;</button></div>
+    <div class="shortcut-grid"><span>Select <kbd>V</kbd></span><span>Pan <kbd>H</kbd></span><span>Pencil <kbd>P</kbd></span><span>Arrow <kbd>L</kbd></span><span>Rectangle <kbd>R</kbd></span><span>Note <kbd>N</kbd></span><span>Text <kbd>T</kbd></span><span>Delete <kbd>?</kbd></span><span>Find <kbd>Ctrl F</kbd></span><span>Duplicate <kbd>Ctrl D</kbd></span><span>Task <kbd>K</kbd></span><span>Section <kbd>F</kbd></span></div>
+  </dialog>
+  <dialog class="files-dialog" id="filesDialog">
+    <div class="files-heading">
+      <div><span>YOUR WORKSPACE</span><h2>Canvas files</h2><p>Create separate spaces for every plan, flow, and prototype.</p></div>
+      <div><button class="new-file-button" id="newBoardButton">+ New canvas</button><button class="dialog-close" id="closeFiles">&times;</button></div>
+    </div>
+    <div class="file-list" id="fileList"><p class="files-loading">Loading your files...</p></div>
   </dialog>
   <dialog class="search-dialog" id="searchDialog">
     <div class="search-box">
-      <span>⌕</span>
-      <input id="searchInput" type="search" placeholder="Find text on this canvas…" autocomplete="off">
+      <span>?</span>
+      <input id="searchInput" type="search" placeholder="Find text on this canvas..." autocomplete="off">
       <kbd>Esc</kbd>
     </div>
     <div class="search-results" id="searchResults"><p>Start typing to search your canvas.</p></div>

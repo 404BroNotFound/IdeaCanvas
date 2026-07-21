@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -55,6 +56,26 @@ def health() -> tuple[Response, int]:
     return jsonify({"status": "ok", "service": "IdeaCanvas"}), 200
 
 
+def board_summary(file_path: Path) -> dict[str, Any]:
+    """Return lightweight metadata for the project browser."""
+    try:
+        board = json.loads(file_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        board = {}
+    return {
+        "id": file_path.stem,
+        "title": board.get("title", "Untitled canvas"),
+        "updatedAt": board.get("updatedAt", datetime.fromtimestamp(file_path.stat().st_mtime, timezone.utc).isoformat()),
+        "objectCount": len(board.get("nodes", [])) + len(board.get("drawings", [])),
+    }
+
+
+@app.get("/api/boards")
+def list_boards() -> tuple[Response, int]:
+    boards = [board_summary(path) for path in BOARD_DIRECTORY.glob("*.json")]
+    boards.sort(key=lambda board: board["updatedAt"], reverse=True)
+    return jsonify({"boards": boards}), 200
+
 @app.get("/api/boards/<board_id>")
 def get_board(board_id: str) -> tuple[Response, int] | Response:
     try:
@@ -80,11 +101,26 @@ def save_board(board_id: str) -> tuple[Response, int]:
         return jsonify({"error": "Invalid board data"}), 400
 
     payload["id"] = board_id
+    payload["updatedAt"] = datetime.now(timezone.utc).isoformat()
     temporary_path = file_path.with_suffix(".tmp")
     temporary_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     temporary_path.replace(file_path)
 
     return jsonify({"saved": True, "boardId": board_id}), 200
+
+
+@app.delete("/api/boards/<board_id>")
+def delete_board(board_id: str) -> tuple[Response, int]:
+    try:
+        file_path = board_path(board_id)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    if not file_path.exists():
+        return jsonify({"error": "Board not found"}), 404
+
+    file_path.unlink()
+    return jsonify({"deleted": True, "boardId": board_id}), 200
 
 
 @app.errorhandler(413)

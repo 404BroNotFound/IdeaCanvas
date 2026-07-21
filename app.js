@@ -23,11 +23,16 @@ const elements = {
   searchInput: document.querySelector("#searchInput"),
   searchResults: document.querySelector("#searchResults"),
   selectionActions: document.querySelector("#selectionActions"),
+  filesDialog: document.querySelector("#filesDialog"),
+  fileList: document.querySelector("#fileList"),
+  toolGuideIcon: document.querySelector("#toolGuideIcon"),
+  toolGuideTitle: document.querySelector("#toolGuideTitle"),
+  toolGuideText: document.querySelector("#toolGuideText"),
 };
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const STORAGE_KEY = "ideacanvas";
-const DEFAULT_BOARD_ID = "default";
+let currentBoardId = localStorage.getItem("ideacanvas-current-board") || "default";
 const HEADER_HEIGHT = 72;
 const NOTE_COLORS = ["#fff0ad", "#c7eadc", "#d4e2fa", "#f7cec7", "#e6daf4"];
 const KEY_TO_TOOL = {
@@ -41,6 +46,8 @@ const KEY_TO_TOOL = {
   n: "note",
   t: "text",
   c: "connector",
+  k: "task",
+  f: "frame",
 };
 
 // Application state ---------------------------------------------------------
@@ -184,8 +191,29 @@ function setTool(toolName) {
     diamond: "Decision",
     note: "Sticky note",
     text: "Text",
+    task: "Task",
+    frame: "Section",
   };
   elements.inspectorTitle.textContent = labels[toolName] || "Canvas";
+
+  const guides = {
+    select: ["V", "Select tool", "Click an object to move, style, duplicate, or delete it."],
+    hand: ["H", "Move canvas", "Drag anywhere to navigate your planning space."],
+    draw: ["P", "Pencil", "Sketch freely. Choose color and weight from the Style panel."],
+    line: ["L", "Arrow", "Drag to communicate direction, sequence, or flow."],
+    connector: ["C", "Connector", "Click one object, then another, to link them."],
+    rect: ["R", "Rectangle", "Add a labeled step, screen, or process block."],
+    ellipse: ["O", "Ellipse", "Add a goal, milestone, or central idea."],
+    diamond: ["G", "Decision", "Add a branching decision to your workflow."],
+    note: ["N", "Sticky note", "Capture a quick thought and edit it immediately."],
+    task: ["K", "Task card", "Add an actionable item to a plan or Kanban board."],
+    frame: ["F", "Section frame", "Group related objects into a named visual area."],
+    text: ["T", "Text", "Add a heading, annotation, or explanation."],
+  };
+  const guide = guides[toolName] || guides.select;
+  elements.toolGuideIcon.textContent = guide[0];
+  elements.toolGuideTitle.textContent = guide[1];
+  elements.toolGuideText.textContent = guide[2];
 }
 
 function clearSelection() {
@@ -205,11 +233,13 @@ function selectNode(nodeId) {
 // Canvas data ---------------------------------------------------------------
 function addNode(type, x, y, text, width, height, color) {
   const presets = {
-    note: { width: 190, height: 132, text: "Write an idea…" },
+    note: { width: 190, height: 132, text: "Write an idea..." },
     rect: { width: 180, height: 94, text: "Add a label" },
     ellipse: { width: 172, height: 104, text: "New thought" },
     diamond: { width: 124, height: 124, text: "Decision" },
     text: { width: 220, height: 44, text: "Start typing" },
+    task: { width: 230, height: 62, text: "[ ] New task" },
+    frame: { width: 430, height: 280, text: "Section" },
   };
   const preset = presets[type];
 
@@ -272,12 +302,15 @@ function renderConnection(connection) {
 }
 
 // DOM rendering -------------------------------------------------------------
-function renderCanvas() {
-  queryAll(".node", elements.world).forEach((node) => node.remove());
+function renderSvgLayer() {
   queryAll(":scope > path", elements.connectionLayer).forEach((path) => path.remove());
-
   state.drawings.forEach(createSvgPath);
   state.connections.forEach(renderConnection);
+}
+
+function renderCanvas() {
+  queryAll(".node", elements.world).forEach((node) => node.remove());
+  renderSvgLayer();
 
   state.nodes.forEach((node) => {
     const nodeElement = document.createElement("div");
@@ -369,7 +402,7 @@ function handlePointerDown(event) {
     return;
   }
 
-  const nodeTools = ["note", "rect", "ellipse", "diamond", "text"];
+  const nodeTools = ["note", "rect", "ellipse", "diamond", "text", "task", "frame"];
   if (nodeTools.includes(state.tool)) {
     takeSnapshot();
     const node = addNode(state.tool, worldPoint.x - 90, worldPoint.y - 55);
@@ -412,10 +445,18 @@ function handlePointerMove(event) {
   if (interaction.kind === "move") {
     const worldPoint = screenToWorld(event.clientX, event.clientY);
     const node = getNodeById(interaction.nodeId);
+    const nodeElement = document.querySelector(`[data-id="${node.id}"]`);
+
     node.x = worldPoint.x - interaction.offsetX;
     node.y = worldPoint.y - interaction.offsetY;
-    renderCanvas();
-    selectNode(node.id);
+
+    // Update only the moving object. Rebuilding every node here continuously
+    // restarted entrance animations and made the canvas appear to disappear.
+    if (nodeElement) {
+      nodeElement.style.left = `${node.x}px`;
+      nodeElement.style.top = `${node.y}px`;
+    }
+    renderSvgLayer();
     return;
   }
 
@@ -511,7 +552,7 @@ function clearCanvas() {
   interaction = null;
   clearSelection();
   renderCanvas();
-  showToast("Canvas cleared — use Undo to restore it");
+  showToast("Canvas cleared - use Undo to restore it");
 }
 
 function openCanvasSearch() {
@@ -530,7 +571,7 @@ function renderSearchResults(query) {
 
   const matches = state.nodes.filter((node) => node.text.toLowerCase().includes(normalizedQuery));
   if (!matches.length) {
-    elements.searchResults.innerHTML = `<p>No objects found for “${escapeHtml(query)}”.</p>`;
+    elements.searchResults.innerHTML = `<p>No objects found for &quot;${escapeHtml(query)}&quot;.</p>`;
     return;
   }
 
@@ -538,7 +579,7 @@ function renderSearchResults(query) {
     <button class="search-result" data-result-id="${node.id}">
       <span class="result-icon">${node.type.slice(0, 1).toUpperCase()}</span>
       <span><b>${escapeHtml(node.text)}</b><small>${node.type}</small></span>
-      <strong>→</strong>
+      <strong>?</strong>
     </button>
   `).join("");
 }
@@ -625,11 +666,39 @@ function addBrainstorm(centerX, centerY) {
   columns.forEach((title, columnIndex) => {
     const x = centerX - 390 + columnIndex * 275;
     addNode("text", x, centerY - 190, title, 220, 40);
-    addNode("note", x, centerY - 125, "Add a thought…", 188, 100);
-    addNode("note", x, centerY, "Add a thought…", 188, 100);
+    addNode("note", x, centerY - 125, "Add a thought...", 188, 100);
+    addNode("note", x, centerY, "Add a thought...", 188, 100);
   });
 }
 
+function addRoadmap(centerX, centerY) {
+  ["Now", "Next", "Later"].forEach((period, index) => {
+    const x = centerX - 430 + index * 285;
+    addNode("frame", x, centerY - 185, period, 250, 350);
+    addNode("task", x + 12, centerY - 120, "[ ] Key outcome", 220, 58);
+    addNode("task", x + 12, centerY - 45, "[ ] Customer milestone", 220, 58);
+    addNode("task", x + 12, centerY + 30, "[ ] Success measure", 220, 58);
+  });
+}
+
+function addKanban(centerX, centerY) {
+  ["Backlog", "In progress", "Done"].forEach((column, index) => {
+    const x = centerX - 430 + index * 285;
+    addNode("frame", x, centerY - 190, column, 250, 370);
+    addNode("task", x + 12, centerY - 120, "[ ] Define the problem", 220, 58);
+    addNode("task", x + 12, centerY - 45, "[ ] Validate the idea", 220, 58);
+  });
+}
+
+function addWireframe(centerX, centerY) {
+  addNode("frame", centerX - 400, centerY - 245, "Mobile app screen", 800, 490);
+  addNode("rect", centerX - 370, centerY - 205, "Logo                 Menu", 740, 52, "#202630");
+  addNode("text", centerX - 330, centerY - 115, "A clear product headline", 440, 48, "#202630");
+  addNode("rect", centerX - 330, centerY - 48, "Primary action", 180, 54, "#6458d6");
+  addNode("rect", centerX + 90, centerY - 125, "Image / prototype", 240, 210, "#9aa2ad");
+  addNode("rect", centerX - 330, centerY + 95, "Feature", 180, 80, "#1778e8");
+  addNode("rect", centerX - 125, centerY + 95, "Feature", 180, 80, "#0f9f78");
+}
 function applyTemplate(templateName) {
   elements.templateDialog.close();
 
@@ -646,6 +715,9 @@ function applyTemplate(templateName) {
   if (templateName === "mindmap") addMindMap(centerX, centerY);
   if (templateName === "flow") addProcessFlow(centerX, centerY);
   if (templateName === "brainstorm") addBrainstorm(centerX, centerY);
+  if (templateName === "roadmap") addRoadmap(centerX, centerY);
+  if (templateName === "kanban") addKanban(centerX, centerY);
+  if (templateName === "wireframe") addWireframe(centerX, centerY);
 
   renderCanvas();
   showToast("Layout added");
@@ -683,7 +755,7 @@ function applyLoadedBoard(board) {
 
 function loadLocalBoard() {
   try {
-    const savedBoard = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const savedBoard = JSON.parse(localStorage.getItem(STORAGE_KEY + ":" + currentBoardId) || localStorage.getItem(STORAGE_KEY));
     if (savedBoard) applyLoadedBoard(savedBoard);
   } catch (error) {
     console.warn("Could not load the local canvas.", error);
@@ -694,10 +766,11 @@ async function saveBoard({ silent = false } = {}) {
   const board = buildBoardPayload();
 
   // Local storage keeps the app usable if the Python server is unavailable.
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(board));
+  localStorage.setItem(STORAGE_KEY + ":" + currentBoardId, JSON.stringify(board));
+  localStorage.setItem("ideacanvas-current-board", currentBoardId);
 
   try {
-    const response = await fetch(`/api/boards/${DEFAULT_BOARD_ID}`, {
+    const response = await fetch("/api/boards/" + currentBoardId, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(board),
@@ -709,13 +782,15 @@ async function saveBoard({ silent = false } = {}) {
   } catch (error) {
     console.warn("Python backend unavailable; saved locally instead.", error);
     markSaved();
-    if (!silent) showToast("Saved locally — server unavailable");
+    if (!silent) showToast("Saved locally - server unavailable");
   }
 }
 
-async function loadBoard() {
+async function loadBoard(boardId = currentBoardId) {
+  currentBoardId = boardId;
+  localStorage.setItem("ideacanvas-current-board", currentBoardId);
   try {
-    const response = await fetch(`/api/boards/${DEFAULT_BOARD_ID}`);
+    const response = await fetch("/api/boards/" + currentBoardId);
     if (response.status === 404) {
       loadLocalBoard();
       return;
@@ -728,6 +803,101 @@ async function loadBoard() {
   }
 }
 
+function resetForNewBoard(title) {
+  state.nodes = [];
+  state.drawings = [];
+  state.connections = [];
+  history = [];
+  future = [];
+  document.querySelector("#boardTitle").textContent = title;
+  clearSelection();
+  resetView();
+  renderCanvas();
+  markUnsaved();
+}
+
+function createBoardId(title) {
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "").slice(0, 36) || "canvas";
+  return slug + "-" + Date.now().toString(36);
+}
+
+async function createNewBoard() {
+  const title = window.prompt("Name your new canvas:", "Untitled canvas");
+  if (!title || !title.trim()) return;
+  await saveBoard({ silent: true });
+  currentBoardId = createBoardId(title);
+  localStorage.setItem("ideacanvas-current-board", currentBoardId);
+  resetForNewBoard(title.trim());
+  await saveBoard({ silent: true });
+  elements.filesDialog.close();
+  showToast("New canvas created");
+}
+
+function formatFileDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Saved recently";
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function renderFileList(files) {
+  elements.fileList.replaceChildren();
+  if (!files.length) {
+    const empty = document.createElement("p");
+    empty.className = "files-empty";
+    empty.textContent = "No saved canvases yet. Create one to begin planning.";
+    elements.fileList.appendChild(empty);
+    return;
+  }
+
+  files.forEach((file) => {
+    const card = document.createElement("article");
+    card.className = "file-card" + (file.id === currentBoardId ? " current" : "");
+    card.innerHTML = [
+      '<button class="file-open" data-open-file="', escapeHtml(file.id), '"></button>',
+      '<div class="file-preview">', escapeHtml(file.title.slice(0, 1).toUpperCase()), '</div>',
+      '<div class="file-details"><span><b>', escapeHtml(file.title), '</b><small>',
+      String(file.objectCount || 0), ' objects - ', formatFileDate(file.updatedAt),
+      '</small></span><button class="file-delete" data-delete-file="', escapeHtml(file.id), '">x</button></div>',
+    ].join("");
+    elements.fileList.appendChild(card);
+  });
+}
+
+async function openFiles() {
+  elements.filesDialog.showModal();
+  elements.fileList.innerHTML = '<p class="files-loading">Loading your saved canvases...</p>';
+  try {
+    const response = await fetch("/api/boards");
+    if (!response.ok) throw new Error("Unable to load files");
+    renderFileList((await response.json()).boards);
+  } catch (error) {
+    const localBoard = JSON.parse(localStorage.getItem(STORAGE_KEY + ":" + currentBoardId) || "null");
+    renderFileList(localBoard ? [{ id: currentBoardId, title: localBoard.title || "Current canvas", objectCount: localBoard.nodes.length, updatedAt: new Date() }] : []);
+  }
+}
+
+async function openFile(boardId) {
+  if (boardId === currentBoardId) return elements.filesDialog.close();
+  await saveBoard({ silent: true });
+  await loadBoard(boardId);
+  elements.filesDialog.close();
+  showToast("Canvas opened");
+}
+
+async function deleteFile(boardId) {
+  if (boardId === currentBoardId) return showToast("Open another canvas before deleting this one");
+  if (!window.confirm("Delete this canvas permanently?")) return;
+  try {
+    const response = await fetch("/api/boards/" + boardId, { method: "DELETE" });
+    if (!response.ok && response.status !== 404) throw new Error("Delete failed");
+  } catch (error) {
+    console.warn("Server delete unavailable; removing the local copy.", error);
+  }
+  localStorage.removeItem(STORAGE_KEY + ":" + boardId);
+  await openFiles();
+  showToast("Canvas deleted");
+}
 function exportBoard() {
   const board = buildBoardPayload();
   const file = new Blob([JSON.stringify(board, null, 2)], { type: "application/json" });
@@ -836,6 +1006,16 @@ function bindInterfaceEvents() {
   document.querySelector("#deleteButton").addEventListener("click", deleteSelectedNode);
   document.querySelector("#centerContentButton").addEventListener("click", centerContent);
   document.querySelector("#clearCanvasButton").addEventListener("click", clearCanvas);
+  document.querySelector("#filesButton").addEventListener("click", openFiles);
+  document.querySelector("#newBoardButton").addEventListener("click", createNewBoard);
+  document.querySelector("#closeFiles").addEventListener("click", () => elements.filesDialog.close());
+
+  elements.fileList.addEventListener("click", (event) => {
+    const openButton = event.target.closest("[data-open-file]");
+    const deleteButton = event.target.closest("[data-delete-file]");
+    if (openButton) openFile(openButton.dataset.openFile);
+    if (deleteButton) deleteFile(deleteButton.dataset.deleteFile);
+  });
 
   elements.searchInput.addEventListener("input", (event) => renderSearchResults(event.target.value));
   elements.searchResults.addEventListener("click", (event) => {
