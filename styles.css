@@ -154,7 +154,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .connection-layer { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 
 .empty-state { position: absolute; left: calc((100vw - var(--sidebar-width) - var(--inspector-width)) / 2); top: 44vh; width: min(620px, 75vw); text-align: center; transform: translate(-50%, -50%); transition: opacity 240ms ease, transform 240ms ease; }
-.empty-state.hidden { opacity: 0; pointer-events: none; transform: translate(-50%, -47%); }
+.empty-state.hidden { visibility: hidden; opacity: 0; pointer-events: none; transform: translate(-50%, -47%); transition: visibility 0s linear 240ms, opacity 240ms ease, transform 240ms ease; }
 .eyebrow { color: var(--violet); font-size: 10px; font-weight: 800; letter-spacing: 0.19em; }
 .empty-state h1 { margin: 13px 0 10px; color: #252b35; font: 800 clamp(39px, 4.1vw, 58px)/1.06 "Manrope", sans-serif; letter-spacing: -3.2px; }
 .empty-state h1 em { color: var(--violet); font-style: normal; }
@@ -1086,4 +1086,13 @@ body.dark-mode {
 .node .content {
   font-family: var(--node-font), sans-serif !important;
   font-size: var(--node-font-size) !important;
+}
+/* IdeaCanvas brand mark */
+.brand-mark img {
+  display: block; width: 40px; height: 40px; flex: 0 0 40px;
+  filter: drop-shadow(0 8px 16px rgba(100,88,214,.26));
+}
+@media (min-width: 981px) {
+  .brand-mark img { width: 36px; height: 36px; flex-basis: 36px; }
+  .sidebar-compact .brand-mark img { width: 38px; height: 38px; flex-basis: 38px; }
 }

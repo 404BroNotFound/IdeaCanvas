@@ -83,6 +83,7 @@ let textFitFrame = null;
 let pendingAction = null;
 let typographySnapshotTaken = false;
 let imageReplaceTargetId = null;
+let welcomeDismissed = false;
 
 // Small utilities -----------------------------------------------------------
 function applyTheme(theme, { persist = true } = {}) {
@@ -554,8 +555,23 @@ function renderCanvas() {
   });
 
   const hasContent = state.nodes.length > 0 || state.drawings.length > 0;
-  elements.emptyState.classList.toggle("hidden", hasContent);
+  if (hasContent) welcomeDismissed = true;
+  const shouldHideWelcome = hasContent || welcomeDismissed;
+  elements.emptyState.classList.toggle("hidden", shouldHideWelcome);
+  elements.emptyState.setAttribute("aria-hidden", String(shouldHideWelcome));
+  elements.emptyState.inert = shouldHideWelcome;
+  elements.viewport.classList.toggle("board-ready", shouldHideWelcome);
   scheduleTextFit();
+}
+
+function dismissWelcome() {
+  if (welcomeDismissed) return false;
+  welcomeDismissed = true;
+  elements.emptyState.classList.add("hidden");
+  elements.emptyState.setAttribute("aria-hidden", "true");
+  elements.emptyState.inert = true;
+  elements.viewport.classList.add("board-ready");
+  return true;
 }
 
 function beginNodeEditing(node) {
@@ -597,6 +613,10 @@ function beginDrawing(kind, point) {
 
 function handlePointerDown(event) {
   if (event.button !== 0) return;
+
+  // Keep template buttons clickable, but let every other first board touch
+  // dismiss the welcome and continue as the intended canvas interaction.
+  if (!event.target.closest("#emptyState [data-template]")) dismissWelcome();
 
   const nodeElement = event.target.closest(".node");
   const worldPoint = screenToWorld(event.clientX, event.clientY);
@@ -714,7 +734,7 @@ function handlePointerMove(event) {
 
     renderSvgLayer();
     createSvgPath({
-      path: pointsToPath(interaction.points),
+      path: interaction.kind === "draw" ? pointsToSmoothPath(interaction.points) : pointsToPath(interaction.points),
       color: interaction.color,
       width: interaction.width,
       arrow: interaction.kind === "line",
@@ -726,12 +746,28 @@ function pointsToPath(points) {
   return `M${points.map((point) => point.join(" ")).join(" L")}`;
 }
 
+function pointsToSmoothPath(points) {
+  if (points.length < 3) return pointsToPath(points);
+  const commands = ["M" + points[0][0] + " " + points[0][1]];
+
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const current = points[index];
+    const next = points[index + 1];
+    const midpointX = (current[0] + next[0]) / 2;
+    const midpointY = (current[1] + next[1]) / 2;
+    commands.push("Q" + current[0] + " " + current[1] + " " + midpointX + " " + midpointY);
+  }
+
+  const last = points[points.length - 1];
+  commands.push("L" + last[0] + " " + last[1]);
+  return commands.join(" ");
+}
 function handlePointerUp() {
   if (interaction?.kind === "draw" || interaction?.kind === "line") {
     if (interaction.points.length > 1) {
       commitHistorySnapshot(interaction.before);
       state.drawings.push({
-        path: pointsToPath(interaction.points),
+        path: interaction.kind === "draw" ? pointsToSmoothPath(interaction.points) : pointsToPath(interaction.points),
         color: interaction.color,
         width: interaction.width,
         arrow: interaction.kind === "line",
@@ -998,6 +1034,7 @@ function zoomFromCanvasCenter(change) {
   );
 }
 function handleWheel(event) {
+  dismissWelcome();
   event.preventDefault();
   if (state.navigationLocked) return;
 
@@ -1085,9 +1122,9 @@ function addWireframe(centerX, centerY) {
 }
 function applyTemplate(templateName) {
   elements.templateDialog.close();
+  dismissWelcome();
 
   if (templateName === "blank") {
-    elements.emptyState.classList.add("hidden");
     showToast("Your canvas is ready");
     return;
   }
@@ -1195,6 +1232,7 @@ function resetForNewBoard(title) {
   state.connections = [];
   history = [];
   future = [];
+  welcomeDismissed = false;
   document.querySelector("#boardTitle").textContent = title;
   clearSelection();
   resetView();
@@ -1476,6 +1514,8 @@ function handleKeyDown(event) {
   }
   if (isFormField) return;
 
+  if (!["Tab", "Shift", "Control", "Alt", "Meta"].includes(event.key)) dismissWelcome();
+
   if (event.code === "Space") {
     spacePressed = true;
     elements.viewport.style.cursor = "grab";
@@ -1552,6 +1592,9 @@ function handleKeyUp(event) {
 
 // Interface events ----------------------------------------------------------
 function bindInterfaceEvents() {
+  // Clicking any app control also signals that the user is ready to work.
+  document.addEventListener("click", dismissWelcome, { capture: true });
+
   queryAll(".nav-tool").forEach((button) => {
     if (!button.getAttribute("aria-label") && button.dataset.label) button.setAttribute("aria-label", button.dataset.label);
   });

@@ -33,7 +33,7 @@ class IdeaCanvasApiTests(unittest.TestCase):
         self.assertEqual(response.get_json()["status"], "ok")
 
     def test_frontend_is_served_without_exposing_backend_source(self) -> None:
-        for path in ("/", "/styles.css", "/app.js"):
+        for path in ("/", "/styles.css", "/app.js", "/logo.svg"):
             response = self.client.get(path)
             self.assertEqual(response.status_code, 200)
             response.close()

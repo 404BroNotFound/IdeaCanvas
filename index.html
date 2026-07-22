@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#15122b">
   <title>IdeaCanvas - Visual Thinking Studio</title>
+  <link rel="icon" href="/logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Lora:wght@400;500;600;700&family=Manrope:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +15,7 @@
   <div class="app-shell">
     <aside class="navigation" aria-label="Main navigation">
       <a class="brand-mark" href="#" aria-label="IdeaCanvas home">
-        <svg viewBox="0 0 40 40"><path d="M11 29V18L20 11L29 18V29"/><path d="M15 26L25 16"/></svg>
+        <img src="/logo.svg" alt="" width="40" height="40">
         <span class="brand-copy"><b>IdeaCanvas</b><small>Visual workspace</small></span>
       </a>
       <button class="sidebar-toggle" id="sidebarToggleButton" aria-label="Collapse sidebar" aria-pressed="false">&#8249;</button>
@@ -73,7 +74,7 @@
           <section class="empty-state" id="emptyState">
             <span class="eyebrow">NEW CANVAS</span>
             <h1>Turn loose thoughts<br>into <em>clear direction.</em></h1>
-            <p>Choose a starting point or use the tool dock to build from scratch.</p>
+            <p>Choose a starting point, or tap anywhere on the board to begin.</p>
             <div class="canvas-lock-note"><span class="inline-lock-icon"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>Your canvas starts fixed to prevent accidental movement. Use Move or Space-drag when you want to navigate.</div>
             <div class="start-options">
               <button data-template="mindmap"><span class="option-icon violet">&#10022;</span><span><b>Map an idea</b><small>Start from one central thought</small></span><strong>&#8594;</strong></button>

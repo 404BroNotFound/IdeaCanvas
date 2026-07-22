@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-labelledby="title">
+  <title id="title">IdeaCanvas</title>
+  <defs>
+    <linearGradient id="brand-gradient" x1="7" y1="5" x2="41" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8878F2"/>
+      <stop offset="1" stop-color="#5144B8"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="42" height="42" rx="14" fill="url(#brand-gradient)"/>
+  <path d="M15 17.5c0-1.38 1.12-2.5 2.5-2.5h10c1.38 0 2.5 1.12 2.5 2.5v10c0 1.38-1.12 2.5-2.5 2.5h-10a2.5 2.5 0 0 1-2.5-2.5v-10Z" fill="none" stroke="#fff" stroke-width="2.4"/>
+  <path d="M23 30v.5c0 1.38 1.12 2.5 2.5 2.5h5c1.38 0 2.5-1.12 2.5-2.5v-5c0-1.38-1.12-2.5-2.5-2.5H30" fill="none" stroke="#DCD7FF" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="m19 25 3.25-3.5 2.5 2.25L28 20" fill="none" stroke="#fff" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="35.5" cy="13" r="2.5" fill="#BDF4E5"/>
+</svg>
