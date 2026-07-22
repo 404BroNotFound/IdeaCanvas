@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#111827">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#15122b">
   <title>IdeaCanvas - Visual Thinking Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Lora:wght@400;500;600;700&family=Manrope:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -15,22 +15,31 @@
     <aside class="navigation" aria-label="Main navigation">
       <a class="brand-mark" href="#" aria-label="IdeaCanvas home">
         <svg viewBox="0 0 40 40"><path d="M11 29V18L20 11L29 18V29"/><path d="M15 26L25 16"/></svg>
+        <span class="brand-copy"><b>IdeaCanvas</b><small>Visual workspace</small></span>
       </a>
+      <button class="sidebar-toggle" id="sidebarToggleButton" aria-label="Collapse sidebar" aria-pressed="false">&#8249;</button>
       <nav class="nav-tools" aria-label="Canvas tools">
+        <span class="nav-section-label">Explore</span>
         <button class="nav-tool active" data-tool="select" data-label="Select"><svg viewBox="0 0 24 24"><path d="m6 4 11 8-5 1-2 5z"/></svg></button>
         <button class="nav-tool" data-tool="hand" data-label="Move canvas"><svg viewBox="0 0 24 24"><path d="M7 11V7a2 2 0 0 1 4 0v3-5a2 2 0 0 1 4 0v5-3a2 2 0 0 1 4 0v7c0 4-3 7-7 7h-1c-3 0-5-2-6-4l-2-4a2 2 0 0 1 4-2Z"/></svg></button>
-        <span class="nav-separator"></span>
+        <span class="nav-section-label">Create</span>
         <button class="nav-tool" data-tool="draw" data-label="Draw"><svg viewBox="0 0 24 24"><path d="m4 20 4-1L19 8l-3-3L5 16z"/><path d="m14 7 3 3"/></svg></button>
         <button class="nav-tool" data-tool="line" data-label="Arrow"><svg viewBox="0 0 24 24"><path d="M5 19 19 5M12 5h7v7"/></svg></button>
         <button class="nav-tool" data-tool="rect" data-label="Rectangle"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></button>
         <button class="nav-tool" data-tool="ellipse" data-label="Ellipse"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8" ry="7"/></svg></button>
         <button class="nav-tool" data-tool="diamond" data-label="Decision"><svg viewBox="0 0 24 24"><path d="m12 3 9 9-9 9-9-9z"/></svg></button>
+        <span class="nav-section-label">Organize</span>
         <button class="nav-tool" data-tool="note" data-label="Note"><svg viewBox="0 0 24 24"><path d="M5 4h14v12l-4 4H5z"/><path d="M15 20v-4h4"/></svg></button>
         <button class="nav-tool text-icon" data-tool="task" data-label="Task">&#10003;</button>
         <button class="nav-tool text-icon" data-tool="frame" data-label="Section">F</button>
         <button class="nav-tool text-icon" data-tool="text" data-label="Text">T</button>
+        <button class="nav-tool" id="addImageButton" data-label="Add picture" aria-label="Add picture"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m4 17 5-4 4 3 3-2 4 3"/></svg></button>
         <button class="nav-tool" data-tool="connector" data-label="Connect"><svg viewBox="0 0 24 24"><circle cx="6" cy="17" r="2"/><circle cx="18" cy="7" r="2"/><path d="M8 16c4 0 4-8 8-8"/></svg></button>
       </nav>
+      <div class="sidebar-shortcuts">
+        <button id="sidebarFilesButton"><span>&#9638;</span>Canvas library</button>
+        <button id="sidebarNewButton"><span>+</span>New canvas</button>
+      </div>
       <div class="nav-footer">
         <button class="nav-tool" id="helpButton" data-label="Shortcuts"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.3 2.3 0 1 1 3.2 2.1c-.7.4-1 1-1 1.9M12 17h.01"/></svg></button>
         <span class="user-avatar">UW</span>
@@ -41,47 +50,54 @@
       <header class="workspace-header">
         <div class="document-info">
           <button class="back-button" id="filesButton" title="Open files">&lsaquo;</button>
-          <div><button id="boardTitle" class="document-title">Product strategy map</button><p><span class="status-dot"></span><span id="saveStatus">All changes saved</span></p></div>
+          <div><button id="boardTitle" class="document-title">Product strategy map</button><p><span class="status-dot"></span><span id="saveStatus" role="status" aria-live="polite">All changes saved</span></p></div>
         </div>
         <div class="header-center">
-          <button id="undoButton" title="Undo">?</button>
-          <button id="redoButton" title="Redo">?</button>
+          <button id="undoButton" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>&#8630;</button>
+          <button id="redoButton" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled>&#8631;</button>
           <span></span>
-          <button id="searchButton" class="search-trigger" title="Find on canvas">? Find</button>
-          <button id="gridButton" title="Toggle grid">Grid</button>
+          <button id="searchButton" class="search-trigger" title="Find on canvas"><span aria-hidden="true">&#9906;</span> Find <kbd>Ctrl F</kbd></button>
+          <button id="gridButton" title="Toggle grid" aria-pressed="true">Grid</button>
         </div>
         <div class="header-actions">
+          <button class="theme-toggle" id="themeToggleButton" aria-label="Switch to dark mode" aria-pressed="false"><span aria-hidden="true">&#9790;</span></button>
+          <button class="mobile-inspector-button" id="mobileInspectorButton" aria-label="Toggle style panel" aria-controls="styleInspector" aria-expanded="true">&#9881;</button>
           <div class="collaborators"><span class="avatar coral">AN</span><span class="avatar aqua">MK</span><span class="avatar count">+2</span></div>
           <button class="preview-button" id="saveButton">Save</button>
-          <button class="primary-button" id="exportButton">Export <span>?</span></button>
+          <button class="primary-button" id="exportButton">Export <span aria-hidden="true">&#8599;</span></button>
         </div>
       </header>
-      <main class="canvas-viewport" id="viewport">
+      <main class="canvas-viewport" id="viewport" tabindex="0" aria-label="Idea canvas workspace">
         <div class="canvas-world" id="world">
           <svg class="connection-layer" id="connectionLayer"><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L0 6L9 3z" fill="context-stroke"/></marker></defs></svg>
           <section class="empty-state" id="emptyState">
             <span class="eyebrow">NEW CANVAS</span>
             <h1>Turn loose thoughts<br>into <em>clear direction.</em></h1>
-            <p>Choose a starting point or pick a tool from the left.</p>
+            <p>Choose a starting point or use the tool dock to build from scratch.</p>
+            <div class="canvas-lock-note"><span class="inline-lock-icon"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>Your canvas starts fixed to prevent accidental movement. Use Move or Space-drag when you want to navigate.</div>
             <div class="start-options">
-              <button data-template="mindmap"><span class="option-icon violet">?</span><span><b>Map an idea</b><small>Start from one central thought</small></span><strong>?</strong></button>
-              <button data-template="flow"><span class="option-icon blue">?</span><span><b>Build a process</b><small>Lay out a step-by-step flow</small></span><strong>?</strong></button>
-              <button data-template="brainstorm"><span class="option-icon amber">?</span><span><b>Run a brainstorm</b><small>Capture and group quick ideas</small></span><strong>?</strong></button>
+              <button data-template="mindmap"><span class="option-icon violet">&#10022;</span><span><b>Map an idea</b><small>Start from one central thought</small></span><strong>&#8594;</strong></button>
+              <button data-template="flow"><span class="option-icon blue">&#8644;</span><span><b>Build a process</b><small>Lay out a step-by-step flow</small></span><strong>&#8594;</strong></button>
+              <button data-template="brainstorm"><span class="option-icon amber">&#9728;</span><span><b>Run a brainstorm</b><small>Capture and group quick ideas</small></span><strong>&#8594;</strong></button>
             </div>
             <button class="blank-action" data-template="blank">or start with an empty canvas</button>
           </section>
         </div>
-        <div class="canvas-controls"><button id="zoomOutButton">-</button><span id="zoomLabel">100%</span><button id="zoomInButton">+</button><button id="fitButton">Fit</button></div>
+        <div class="canvas-controls"><button id="navigationLockButton" class="navigation-lock active" aria-pressed="true" title="Canvas movement is locked"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></button><button id="zoomOutButton" aria-label="Zoom out">-</button><span id="zoomLabel">100%</span><button id="zoomInButton" aria-label="Zoom in">+</button><button id="fitButton" aria-label="Fit canvas content to view">Fit</button></div>
         <div class="tool-guide"><span id="toolGuideIcon">V</span><p><b id="toolGuideTitle">Select tool</b><small id="toolGuideText">Click an object to move, style, duplicate, or delete it.</small></p></div>
         <div class="selection-actions" id="selectionActions" aria-label="Selected object actions">
+          <button id="editButton" title="Edit selected object">Edit</button>
           <button id="duplicateButton" title="Duplicate selected object">Duplicate</button>
+          <button id="lockButton" title="Lock selected object">Lock</button>
+          <button id="sendBackButton" title="Send selected object backward">Back</button>
+          <button id="bringFrontButton" title="Bring selected object forward">Front</button>
           <span></span>
           <button id="deleteButton" class="danger-action" title="Delete selected object">Delete</button>
         </div>
       </main>
     </section>
 
-    <aside class="inspector" aria-label="Properties panel">
+    <aside class="inspector" id="styleInspector" aria-label="Properties panel">
       <div class="inspector-heading"><div><span>STYLE</span><h2 id="inspectorTitle">Canvas</h2></div><button id="collapseInspector">&rsaquo;</button></div>
       <section class="property-section">
         <label class="property-label">Color</label>
@@ -99,17 +115,50 @@
         <label class="property-label">Stroke</label>
         <div class="segment-control" id="strokeWidths"><button class="active" data-width="2"><i class="thin"></i>Fine</button><button data-width="4"><i class="medium"></i>Medium</button><button data-width="7"><i class="bold"></i>Bold</button></div>
       </section>
-      <section class="property-section"><label class="property-label">Canvas</label><button class="wide-action" id="templateButton"><span>&#10022;</span><span><b>Start with a layout</b><small>Mind maps, flows and more</small></span><strong>&rsaquo;</strong></button></section>
+      <section class="property-section typography-section">
+        <div class="section-heading"><label class="property-label">Typography</label><span id="fontSizeValue">14 px</span></div>
+        <label class="field-label" for="fontFamilySelect">Font family</label>
+        <select id="fontFamilySelect">
+          <option value="DM Sans">DM Sans</option>
+          <option value="Manrope">Manrope</option>
+          <option value="Space Grotesk">Space Grotesk</option>
+          <option value="Lora">Lora</option>
+          <option value="IBM Plex Mono">IBM Plex Mono</option>
+        </select>
+        <label class="field-label" for="fontSizeRange">Writing size</label>
+        <input id="fontSizeRange" type="range" min="10" max="36" step="1" value="14">
+      </section>
+      <section class="property-section"><label class="property-label">Canvas</label><div class="canvas-action-stack"><button class="wide-action" id="templateButton"><span>&#10022;</span><span><b>Start with a layout</b><small>Mind maps, flows and more</small></span><strong>&rsaquo;</strong></button><button class="wide-action" id="inspectorImageButton"><span>&#9638;</span><span><b>Add a picture</b><small>PNG, JPG, or WebP up to 3 MB</small></span><strong>+</strong></button></div></section>
       <section class="property-section">
         <label class="property-label">Workspace</label>
         <div class="workspace-actions">
-          <button id="centerContentButton"><span>?</span>Center content</button>
+          <button id="centerContentButton"><span>&#8982;</span>Center content</button>
           <button id="clearCanvasButton" class="danger-text"><span>&times;</span>Clear canvas</button>
+        </div>
+      </section>
+      <section class="property-section pro-section">
+        <div class="pro-heading"><label class="property-label">Pro workspace</label><span>PRO</span></div>
+        <p class="pro-description">Precision and presentation tools for focused work.</p>
+        <div class="pro-action-grid">
+          <button id="snapGridButton" aria-pressed="false"><span class="pro-action-icon">&#9638;</span><span><b>Snap</b><small>Align to grid</small></span></button>
+          <button id="focusModeButton" aria-pressed="false"><span class="pro-action-icon">&#9681;</span><span><b>Focus</b><small>Hide panels</small></span></button>
+          <button id="presentButton"><span class="pro-action-icon">&#9655;</span><span><b>Present</b><small>Fullscreen view</small></span></button>
         </div>
       </section>
       <div class="inspector-tip"><span>PRO TIP</span><p>Hold <kbd>Space</kbd> and drag to move around your canvas.</p></div>
     </aside>
   </div>
+
+  <dialog class="export-dialog" id="exportDialog">
+    <div class="dialog-heading"><div><span>EXPORT CENTER</span><h2>Share your thinking</h2></div><button id="closeExport" aria-label="Close export options">&times;</button></div>
+    <p>Choose an editable backup or a presentation-ready visual.</p>
+    <div class="export-options">
+      <button data-export="png"><span class="export-icon image-icon">PNG</span><span><b>PNG image</b><small>High-resolution image for slides and sharing</small></span><strong>Recommended</strong></button>
+      <button data-export="svg"><span class="export-icon vector-icon">SVG</span><span><b>SVG vector</b><small>Scalable artwork for design tools and print</small></span></button>
+      <button data-export="json"><span class="export-icon data-icon">{ }</span><span><b>Canvas data</b><small>Editable JSON backup that preserves every object</small></span></button>
+    </div>
+    <div class="export-footer"><button id="importBoardButton">&#8593; Import JSON backup</button><input id="importBoardInput" type="file" accept=".json,application/json" hidden></div>
+  </dialog>
 
   <dialog class="template-dialog" id="templateDialog">
     <div class="dialog-heading"><div><span>STARTING LAYOUTS</span><h2>Give your thinking a head start</h2></div><button id="closeTemplates">&times;</button></div>
@@ -126,7 +175,7 @@
 
   <dialog class="shortcut-dialog" id="shortcutDialog">
     <div class="dialog-heading"><div><span>WORK FASTER</span><h2>Keyboard shortcuts</h2></div><button id="closeShortcuts">&times;</button></div>
-    <div class="shortcut-grid"><span>Select <kbd>V</kbd></span><span>Pan <kbd>H</kbd></span><span>Pencil <kbd>P</kbd></span><span>Arrow <kbd>L</kbd></span><span>Rectangle <kbd>R</kbd></span><span>Note <kbd>N</kbd></span><span>Text <kbd>T</kbd></span><span>Delete <kbd>?</kbd></span><span>Find <kbd>Ctrl F</kbd></span><span>Duplicate <kbd>Ctrl D</kbd></span><span>Task <kbd>K</kbd></span><span>Section <kbd>F</kbd></span></div>
+    <div class="shortcut-grid"><span>Select <kbd>V</kbd></span><span>Pan <kbd>H</kbd></span><span>Pencil <kbd>P</kbd></span><span>Arrow <kbd>L</kbd></span><span>Rectangle <kbd>R</kbd></span><span>Note <kbd>N</kbd></span><span>Text <kbd>T</kbd></span><span>Delete <kbd>Del</kbd></span><span>Find <kbd>Ctrl F</kbd></span><span>Duplicate <kbd>Ctrl D</kbd></span><span>Task <kbd>K</kbd></span><span>Section <kbd>F</kbd></span><span>Nudge <kbd>Arrows</kbd></span><span>Move 10px <kbd>Shift + Arrows</kbd></span><span>Copy <kbd>Ctrl C</kbd></span><span>Paste <kbd>Ctrl V</kbd></span></div>
   </dialog>
   <dialog class="files-dialog" id="filesDialog">
     <div class="files-heading">
@@ -137,12 +186,31 @@
   </dialog>
   <dialog class="search-dialog" id="searchDialog">
     <div class="search-box">
-      <span>?</span>
+      <span aria-hidden="true">&#9906;</span>
       <input id="searchInput" type="search" placeholder="Find text on this canvas..." autocomplete="off">
       <kbd>Esc</kbd>
     </div>
     <div class="search-results" id="searchResults"><p>Start typing to search your canvas.</p></div>
   </dialog>
+  <dialog class="action-dialog" id="actionDialog">
+    <form id="actionDialogForm">
+      <div class="action-dialog-icon" id="actionDialogIcon" aria-hidden="true">&#10022;</div>
+      <div>
+        <span class="action-eyebrow" id="actionDialogEyebrow">IDEACANVAS</span>
+        <h2 id="actionDialogTitle">Continue?</h2>
+        <p id="actionDialogMessage"></p>
+      </div>
+      <label class="action-input-wrap" id="actionInputWrap">
+        <span>Name</span>
+        <input id="actionDialogInput" type="text" maxlength="80" autocomplete="off">
+      </label>
+      <div class="action-dialog-buttons">
+        <button type="button" id="actionDialogCancel">Cancel</button>
+        <button type="submit" class="action-confirm" id="actionDialogConfirm">Continue</button>
+      </div>
+    </form>
+  </dialog>
+  <input id="imageUploadInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
   <div class="toast" id="toast" role="status"></div>
   <script src="app.js"></script>
 </body>

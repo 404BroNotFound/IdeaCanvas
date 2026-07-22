@@ -21,11 +21,14 @@ Open `http://127.0.0.1:4173`.
 - Mind map, process flow, brainstorming, roadmap, Kanban, and wireframe layouts
 - Multiple named canvas files with create, open, recent metadata, and delete actions
 - Dedicated task cards and section frames for structured planning
+- Persistent light/dark themes with responsive, accessible controls
+- Picture nodes with PNG, JPG, and WebP upload, replacement, movement, locking, and export
+- Per-object typography with five font families and adjustable writing sizes
 - Canvas-wide text search with focus navigation
 - Duplicate, delete, clear-with-undo, and center-content actions
 - Keyboard shortcuts, zoom, panning, grid controls, and responsive layout
 - Debounced server autosave with local-storage fallback
-- JSON export and validated Python persistence API
+- JSON import/export, SVG vector export, high-resolution PNG export, and validated Python persistence API
 
 ## Backend API
 
