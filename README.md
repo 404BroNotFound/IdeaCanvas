@@ -75,7 +75,7 @@ also synced to that user's private cloud workspace.
 2. Open **SQL Editor**, paste `supabase/schema.sql`, and run it once.
 3. In **Project Settings > API**, copy the project URL and the public publishable
    key (or legacy `anon` key).
-4. Add both values to `supabase-config.js`.
+4. Add both values to `js/supabase-config.js`.
 5. Serve the project over HTTP/HTTPS and use the account button in the header.
 
 Only use the public publishable/anonymous key in the browser. Never place the
@@ -86,15 +86,18 @@ that signed-in users can only access their own canvases.
 
 ```text
 IdeaCanvas/
-|-- index.html            # Application interface
-|-- styles.css            # Layout, themes, and responsive styling
-|-- app.js                # Canvas tools, interactions, storage, and exports
-|-- cloud-sync.js         # Supabase auth and cloud persistence adapter
-|-- supabase-config.js    # Public Supabase project configuration
+|-- assets/
+|   `-- logo.svg              # Brand mark and favicon
+|-- css/
+|   `-- styles.css            # Layout, themes, and responsive styling
+|-- js/
+|   |-- app.js                # Canvas tools, interactions, storage, and exports
+|   |-- cloud-sync.js         # Supabase auth and cloud persistence adapter
+|   `-- supabase-config.js    # Public Supabase project configuration
 |-- supabase/
-|   `-- schema.sql        # Secured canvases table and RLS policies
-|-- logo.svg              # IdeaCanvas logo
-`-- README.md             # Project documentation
+|   `-- schema.sql            # Secured canvases table and RLS policies
+|-- index.html                # Application entry page
+`-- README.md                 # Project documentation
 ```
 
 ## Browser Support

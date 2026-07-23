@@ -1354,7 +1354,7 @@ function updateAccountUI() {
   signedIn.hidden = !user;
   document.querySelector("#accountEmailLabel").textContent = user?.email || "";
   note.textContent = !configured
-    ? "Cloud storage is not connected yet. Add the Supabase project settings in supabase-config.js."
+    ? "Cloud storage is not connected yet. Add the Supabase project settings in js/supabase-config.js."
     : user ? "Changes save locally first, then sync securely to your account." : "Your password is handled by Supabase Auth and is never stored in the canvas.";
 }
 
