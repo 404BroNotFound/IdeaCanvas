@@ -399,10 +399,6 @@ function setTool(toolName) {
   elements.toolGuideIcon.textContent = guide[0];
   elements.toolGuideTitle.textContent = guide[1];
   elements.toolGuideText.textContent = guide[2];
-  const activeToolName = document.querySelector("#activeToolName");
-  const activeToolKey = document.querySelector("#activeToolKey");
-  if (activeToolName) activeToolName.textContent = guide[1].replace(" tool", "");
-  if (activeToolKey) activeToolKey.textContent = guide[0];
 }
 
 function clearSelection() {
