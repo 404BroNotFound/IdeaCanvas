@@ -1,21 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-labelledby="title description">
-  <title id="title">IdeaCanvas</title>
-  <desc id="description">A connected idea map on a canvas</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-labelledby="logo-title logo-description">
+  <title id="logo-title">IdeaCanvas</title>
+  <desc id="logo-description">A spark inside a rounded canvas</desc>
   <defs>
-    <linearGradient id="brand" x1="5" y1="4" x2="43" y2="45" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#7868F2"/>
-      <stop offset=".55" stop-color="#5B50D6"/>
-      <stop offset="1" stop-color="#287FD1"/>
+    <linearGradient id="canvas-gradient" x1="7" y1="5" x2="41" y2="43" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8276F4"/>
+      <stop offset="1" stop-color="#5447C7"/>
     </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#29205F" flood-opacity=".28"/>
-    </filter>
   </defs>
-  <rect x="3" y="3" width="42" height="42" rx="13" fill="url(#brand)"/>
-  <path d="M13 11.5h17.5a5.5 5.5 0 0 1 5.5 5.5v14a5.5 5.5 0 0 1-5.5 5.5H17A5.5 5.5 0 0 1 11.5 31V13A1.5 1.5 0 0 1 13 11.5Z" fill="#fff" fill-opacity=".96" filter="url(#shadow)"/>
-  <path d="M18 21c3.1 0 4.1-3 7.2-3M19 22.5c.3 3.6 2.3 6 5.8 6.4M27 19.2c1.1 2.5 1 5.2-.5 7.6" fill="none" stroke="#6659DD" stroke-width="1.9" stroke-linecap="round"/>
-  <circle cx="17.5" cy="20.8" r="2.6" fill="#FFB84C"/>
-  <circle cx="27.3" cy="18" r="2.6" fill="#3E98E8"/>
-  <circle cx="25.8" cy="29" r="2.8" fill="#25B88A"/>
-  <path d="m36.8 8.2.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z" fill="#D9FFF2"/>
+  <rect x="3" y="3" width="42" height="42" rx="13" fill="url(#canvas-gradient)"/>
+  <path d="M15 13h-2v8M33 13h2v8M15 35h-2v-8M33 35h2v-8" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity=".72"/>
+  <path d="m24 13.5 2.6 7.9 7.9 2.6-7.9 2.6-2.6 7.9-2.6-7.9-7.9-2.6 7.9-2.6z" fill="#fff"/>
 </svg>
