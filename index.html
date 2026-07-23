@@ -234,7 +234,12 @@
       <p id="accountMessage">Sign in to keep your canvases safely synced while local storage remains available offline.</p>
       <div class="account-fields" id="accountFields">
         <label>Email<input id="accountEmail" type="email" autocomplete="email" required placeholder="you@example.com"></label>
-        <label>Password<input id="accountPassword" type="password" autocomplete="current-password" minlength="6" required placeholder="At least 6 characters"></label>
+        <label>Password
+          <span class="password-field">
+            <input id="accountPassword" type="password" autocomplete="current-password" minlength="6" required placeholder="Create an IdeaCanvas password">
+            <button type="button" id="togglePasswordButton" aria-label="Show password" aria-pressed="false">Show</button>
+          </span>
+        </label>
       </div>
       <div class="account-actions" id="signedOutActions">
         <button type="button" id="createAccountButton">Create account</button>

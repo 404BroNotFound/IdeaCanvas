@@ -1352,12 +1352,28 @@ function updateAccountUI() {
   document.querySelector("#accountEmailLabel").textContent = user?.email || "";
   note.textContent = !configured
     ? "Cloud storage is not connected yet. Add the Supabase project settings in js/supabase-config.js."
-    : user ? "Changes save locally first, then sync securely to your account." : "Your password is handled by Supabase Auth and is never stored in the canvas.";
+    : user ? "Changes save locally first, then sync securely to your account." : "Create a separate IdeaCanvas password—never enter your Gmail password here.";
 }
 
 function openAccountDialog() {
   updateAccountUI();
+  const passwordInput = document.querySelector("#accountPassword");
+  const toggleButton = document.querySelector("#togglePasswordButton");
+  passwordInput.type = "password";
+  toggleButton.textContent = "Show";
+  toggleButton.setAttribute("aria-label", "Show password");
+  toggleButton.setAttribute("aria-pressed", "false");
   document.querySelector("#accountDialog").showModal();
+}
+
+function toggleAccountPassword() {
+  const input = document.querySelector("#accountPassword");
+  const button = document.querySelector("#togglePasswordButton");
+  const isVisible = input.type === "text";
+  input.type = isVisible ? "password" : "text";
+  button.textContent = isVisible ? "Show" : "Hide";
+  button.setAttribute("aria-label", isVisible ? "Show password" : "Hide password");
+  button.setAttribute("aria-pressed", String(!isVisible));
 }
 
 async function initializeCloud() {
@@ -2021,6 +2037,7 @@ function bindInterfaceEvents() {
   document.querySelector("#accountForm").addEventListener("submit", signInToCloud);
   document.querySelector("#createAccountButton").addEventListener("click", createCloudAccount);
   document.querySelector("#signOutButton").addEventListener("click", signOutOfCloud);
+  document.querySelector("#togglePasswordButton").addEventListener("click", toggleAccountPassword);
   document.querySelector("#addImageButton").addEventListener("click", () => openImagePicker());
   document.querySelector("#inspectorImageButton").addEventListener("click", () => openImagePicker());
   elements.imageUploadInput.addEventListener("change", (event) => addImageFromFile(event.target.files[0]));
