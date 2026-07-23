@@ -36,6 +36,8 @@ const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const STORAGE_KEY = "ideacanvas";
 const THEME_KEY = "ideacanvas-theme";
 const BOARD_INDEX_KEY = "ideacanvas-board-index";
+const cloud = window.ideaCanvasCloud;
+let cloudReady = false;
 const LOCKED_ICON = '<svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
 const UNLOCKED_ICON = '<svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M9 10V7a4 4 0 0 1 7-2.6"/></svg>';
 let currentBoardId = localStorage.getItem("ideacanvas-current-board") || "default";
@@ -1335,6 +1337,90 @@ function applyTemplate(templateName) {
   showToast("Layout added");
 }
 
+// Cloud account -------------------------------------------------------------
+function updateAccountUI() {
+  const user = cloud?.getUser();
+  const configured = Boolean(cloud?.configured);
+  const label = document.querySelector("#accountLabel");
+  const button = document.querySelector("#accountButton");
+  const fields = document.querySelector("#accountFields");
+  const signedOut = document.querySelector("#signedOutActions");
+  const signedIn = document.querySelector("#signedInActions");
+  const note = document.querySelector("#accountNote");
+  label.textContent = user ? "Cloud saved" : "Local only";
+  button.classList.toggle("cloud-connected", Boolean(user));
+  fields.hidden = Boolean(user) || !configured;
+  signedOut.hidden = Boolean(user) || !configured;
+  signedIn.hidden = !user;
+  document.querySelector("#accountEmailLabel").textContent = user?.email || "";
+  note.textContent = !configured
+    ? "Cloud storage is not connected yet. Add the Supabase project settings in supabase-config.js."
+    : user ? "Changes save locally first, then sync securely to your account." : "Your password is handled by Supabase Auth and is never stored in the canvas.";
+}
+
+function openAccountDialog() {
+  updateAccountUI();
+  document.querySelector("#accountDialog").showModal();
+}
+
+async function initializeCloud() {
+  if (!cloud?.configured) {
+    updateAccountUI();
+    return;
+  }
+  try {
+    await cloud.init();
+    cloudReady = true;
+    cloud.onUserChange(updateAccountUI);
+  } catch (error) {
+    console.warn("Cloud initialization failed.", error);
+    showToast("Cloud unavailable — saving locally");
+  }
+  updateAccountUI();
+}
+
+async function signInToCloud(event) {
+  event.preventDefault();
+  const email = document.querySelector("#accountEmail").value.trim();
+  const password = document.querySelector("#accountPassword").value;
+  try {
+    await cloud.signIn(email, password);
+    await saveBoard({ silent: true });
+    updateAccountUI();
+    showToast("Signed in — canvas synced");
+  } catch (error) {
+    showToast(error.message || "Could not sign in");
+  }
+}
+
+async function createCloudAccount() {
+  const form = document.querySelector("#accountForm");
+  if (!form.reportValidity()) return;
+  const email = document.querySelector("#accountEmail").value.trim();
+  const password = document.querySelector("#accountPassword").value;
+  try {
+    const result = await cloud.signUp(email, password);
+    if (result.needsConfirmation) showToast("Check your email to confirm your account");
+    else {
+      await saveBoard({ silent: true });
+      showToast("Account created — canvas synced");
+    }
+    updateAccountUI();
+  } catch (error) {
+    showToast(error.message || "Could not create account");
+  }
+}
+
+async function signOutOfCloud() {
+  try {
+    await cloud.signOut();
+    updateAccountUI();
+    document.querySelector("#accountDialog").close();
+    showToast("Signed out — local saving continues");
+  } catch (error) {
+    showToast(error.message || "Could not sign out");
+  }
+}
 // Persistence and export ----------------------------------------------------
 function buildBoardPayload() {
   return {
@@ -1403,12 +1489,20 @@ function loadLocalBoard() {
 
 async function saveBoard({ silent = false } = {}) {
   const board = { ...buildBoardPayload(), updatedAt: new Date().toISOString() };
+  let cloudSaved = false;
   try {
     localStorage.setItem(STORAGE_KEY + ":" + currentBoardId, JSON.stringify(board));
     localStorage.setItem("ideacanvas-current-board", currentBoardId);
     updateLocalBoardIndex(board);
+    if (cloudReady && cloud?.getUser()) {
+      try {
+        cloudSaved = await cloud.saveBoard(currentBoardId, board);
+      } catch (cloudError) {
+        console.warn("Cloud save failed; the local copy is safe.", cloudError);
+      }
+    }
     markSaved();
-    if (!silent) showToast("Saved on this device");
+    if (!silent) showToast(cloudSaved ? "Saved locally and to cloud" : "Saved on this device");
   } catch (error) {
     console.warn("Local save failed.", error);
     elements.saveStatus.textContent = "Local storage is full";
@@ -1420,8 +1514,20 @@ async function loadBoard(boardId = currentBoardId) {
   currentBoardId = boardId;
   localStorage.setItem("ideacanvas-current-board", currentBoardId);
   loadLocalBoard();
+  if (cloudReady && cloud?.getUser()) {
+    try {
+      const cloudBoard = await cloud.loadBoard(currentBoardId);
+      if (cloudBoard) {
+        applyLoadedBoard(cloudBoard);
+        localStorage.setItem(STORAGE_KEY + ":" + currentBoardId, JSON.stringify(cloudBoard));
+        updateLocalBoardIndex(cloudBoard);
+      }
+    } catch (error) {
+      console.warn("Cloud load failed; using the local copy.", error);
+      showToast("Offline copy opened");
+    }
+  }
 }
-
 function resetForNewBoard(title) {
   state.nodes = [];
   state.drawings = [];
@@ -1491,20 +1597,31 @@ function renderFileList(files) {
 
 async function openFiles() {
   if (!elements.filesDialog.open) elements.filesDialog.showModal();
-  const files = getLocalBoardIndex();
+  const localFiles = getLocalBoardIndex();
   const currentRaw = localStorage.getItem(STORAGE_KEY + ":" + currentBoardId);
-  if (!files.length && currentRaw) {
+  if (!localFiles.length && currentRaw) {
     const board = JSON.parse(currentRaw);
-    files.push({
+    localFiles.push({
       id: currentBoardId,
       title: board.title || "Current canvas",
       objectCount: (board.nodes?.length || 0) + (board.drawings?.length || 0),
       updatedAt: board.updatedAt || new Date().toISOString(),
     });
   }
+  let files = localFiles;
+  if (cloudReady && cloud?.getUser()) {
+    try {
+      const cloudFiles = await cloud.listBoards();
+      const merged = new Map(localFiles.map((file) => [file.id, file]));
+      cloudFiles.forEach((file) => merged.set(file.id, file));
+      files = [...merged.values()].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    } catch (error) {
+      console.warn("Could not list cloud canvases.", error);
+      showToast("Showing offline canvases");
+    }
+  }
   renderFileList(files);
 }
-
 async function openFile(boardId) {
   if (boardId === currentBoardId) return elements.filesDialog.close();
   await saveBoard({ silent: true });
@@ -1517,11 +1634,17 @@ async function deleteFile(boardId) {
   if (boardId === currentBoardId) return showToast("Open another canvas before deleting this one");
   const confirmed = await openActionDialog({
     title: "Delete this canvas?",
-    message: "This canvas will be removed from this browser.",
+    message: cloudReady && cloud?.getUser()
+      ? "This canvas will be removed from this device and your cloud workspace."
+      : "This canvas will be removed from this browser.",
     confirmLabel: "Delete canvas",
     danger: true,
   });
   if (!confirmed) return;
+  if (cloudReady && cloud?.getUser()) {
+    try { await cloud.deleteBoard(boardId); }
+    catch (error) { return showToast("Cloud delete failed — try again"); }
+  }
   localStorage.removeItem(STORAGE_KEY + ":" + boardId);
   localStorage.setItem(BOARD_INDEX_KEY, JSON.stringify(
     getLocalBoardIndex().filter((board) => board.id !== boardId),
@@ -1896,6 +2019,11 @@ function bindInterfaceEvents() {
   });
 
   document.querySelector("#themeToggleButton").addEventListener("click", toggleTheme);
+  document.querySelector("#accountButton").addEventListener("click", openAccountDialog);
+  document.querySelector("#closeAccount").addEventListener("click", () => document.querySelector("#accountDialog").close());
+  document.querySelector("#accountForm").addEventListener("submit", signInToCloud);
+  document.querySelector("#createAccountButton").addEventListener("click", createCloudAccount);
+  document.querySelector("#signOutButton").addEventListener("click", signOutOfCloud);
   document.querySelector("#addImageButton").addEventListener("click", () => openImagePicker());
   document.querySelector("#inspectorImageButton").addEventListener("click", () => openImagePicker());
   elements.imageUploadInput.addEventListener("change", (event) => addImageFromFile(event.target.files[0]));
@@ -2141,11 +2269,15 @@ const initialTheme = localStorage.getItem(THEME_KEY) || (window.matchMedia("(pre
 applyTheme(initialTheme, { persist: false });
 updateTypographyControls();
 bindInterfaceEvents();
-loadBoard();
 renderCanvas();
 updateWorldTransform();
 setTool(state.tool);
 updateHistoryControls();
-
 syncPanelState();
 setNavigationLocked(true, { silent: true });
+
+async function startApplication() {
+  await initializeCloud();
+  await loadBoard();
+}
+startApplication();

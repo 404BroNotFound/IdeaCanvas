@@ -14,11 +14,11 @@ notes, plans, and annotated images directly in the browser.
 - Light and dark themes with consistent selection feedback
 - Mind map, process flow, brainstorming, roadmap, Kanban, and wireframe layouts
 - JSON backups plus SVG and high-resolution PNG exports
-- Multiple canvases stored locally in the browser
+- Multiple canvases stored locally with optional authenticated Supabase cloud sync
 
 ## Getting Started
 
-IdeaCanvas has no dependencies, build step, backend, or database.
+IdeaCanvas has no build step. It works locally by default and can optionally connect to Supabase for user accounts and cloud storage.
 
 1. Clone the repository:
 
@@ -63,21 +63,38 @@ You can also use a static preview extension such as Live Server.
 | Search canvas | `Ctrl+F` |
 | Save locally | `Ctrl+S` |
 
-## Local Storage
+## Storage
 
-Canvas files are saved in browser `localStorage`. No canvas content is uploaded
-to a server. Browser data can be removed when site data is cleared, so export a
-JSON backup for important canvases.
+Every canvas is saved to browser `localStorage` first, so IdeaCanvas continues to
+work offline. When Supabase is configured and a user signs in, the same canvas is
+also synced to that user's private cloud workspace.
+
+### Enable Supabase cloud storage
+
+1. Create a Supabase project.
+2. Open **SQL Editor**, paste `supabase/schema.sql`, and run it once.
+3. In **Project Settings > API**, copy the project URL and the public publishable
+   key (or legacy `anon` key).
+4. Add both values to `supabase-config.js`.
+5. Serve the project over HTTP/HTTPS and use the account button in the header.
+
+Only use the public publishable/anonymous key in the browser. Never place the
+`service_role` key in this repository. Row Level Security in `schema.sql` ensures
+that signed-in users can only access their own canvases.
 
 ## Project Structure
 
 ```text
 IdeaCanvas/
-??? index.html   # Application interface
-??? styles.css   # Layout, themes, and responsive styling
-??? app.js       # Canvas tools, interactions, storage, and exports
-??? logo.svg     # IdeaCanvas logo
-??? README.md    # Project documentation
+|-- index.html            # Application interface
+|-- styles.css            # Layout, themes, and responsive styling
+|-- app.js                # Canvas tools, interactions, storage, and exports
+|-- cloud-sync.js         # Supabase auth and cloud persistence adapter
+|-- supabase-config.js    # Public Supabase project configuration
+|-- supabase/
+|   `-- schema.sql        # Secured canvases table and RLS policies
+|-- logo.svg              # IdeaCanvas logo
+`-- README.md             # Project documentation
 ```
 
 ## Browser Support

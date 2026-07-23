@@ -66,6 +66,9 @@
           <button id="gridButton" title="Toggle grid" aria-pressed="true">Grid</button>
         </div>
         <div class="header-actions">
+          <button class="account-button" id="accountButton" type="button" aria-label="Open cloud account">
+            <span class="cloud-state-dot" aria-hidden="true"></span><b id="accountLabel">Local only</b>
+          </button>
           <a class="github-button" href="https://github.com/404BroNotFound/IdeaCanvas" target="_blank" rel="noopener noreferrer" aria-label="View IdeaCanvas on GitHub" title="View on GitHub">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v13a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 18.5z"/><path d="M8 3v18M12 8h4M12 12h4"/></svg>
             <span>View on GitHub</span>
@@ -227,6 +230,29 @@
     </div>
     <div class="search-results" id="searchResults"><p>Start typing to search your canvas.</p></div>
   </dialog>
+  <dialog class="account-dialog" id="accountDialog">
+    <form id="accountForm">
+      <div class="account-dialog-heading">
+        <span class="cloud-mark" aria-hidden="true">&#9729;</span>
+        <div><span>CLOUD WORKSPACE</span><h2 id="accountDialogTitle">Save on every device</h2></div>
+        <button type="button" id="closeAccount" aria-label="Close account dialog">&times;</button>
+      </div>
+      <p id="accountMessage">Sign in to keep your canvases safely synced while local storage remains available offline.</p>
+      <div class="account-fields" id="accountFields">
+        <label>Email<input id="accountEmail" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+        <label>Password<input id="accountPassword" type="password" autocomplete="current-password" minlength="6" required placeholder="At least 6 characters"></label>
+      </div>
+      <div class="account-actions" id="signedOutActions">
+        <button type="button" id="createAccountButton">Create account</button>
+        <button type="submit" class="account-primary">Sign in</button>
+      </div>
+      <div class="account-signed-in" id="signedInActions" hidden>
+        <span>Signed in as <b id="accountEmailLabel"></b></span>
+        <button type="button" id="signOutButton">Sign out</button>
+      </div>
+      <small class="account-note" id="accountNote">Cloud storage must be configured by the site owner.</small>
+    </form>
+  </dialog>
   <dialog class="action-dialog" id="actionDialog">
     <form id="actionDialogForm">
       <div class="action-dialog-icon" id="actionDialogIcon" aria-hidden="true">&#10022;</div>
@@ -247,6 +273,9 @@
   </dialog>
   <input id="imageUploadInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
   <div class="toast" id="toast" role="status"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="cloud-sync.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

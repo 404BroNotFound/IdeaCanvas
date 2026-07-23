@@ -1242,3 +1242,42 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 @media (max-width: 1080px) { .active-tool-status { display: none; } }
 @media (min-width: 981px) { .sidebar-compact .nav-tool.active::before { left: -10px; } }
 @media (max-width: 980px) { .nav-tool.active::before { display: none; } }
+/* Cloud account and sync */
+.account-button {
+  display: inline-flex; height: 38px; gap: 7px; align-items: center; padding: 0 12px;
+  border: 1px solid var(--border); border-radius: 9px; color: var(--muted); background: #fff;
+  font-size: 10px; cursor: pointer;
+}
+.account-button:hover { color: var(--violet); border-color: #c8c2f0; background: var(--violet-soft); }
+.cloud-state-dot { width: 8px; height: 8px; border-radius: 50%; background: #a2a9b5; box-shadow: 0 0 0 3px rgba(162,169,181,.14); }
+.account-button.cloud-connected .cloud-state-dot { background: var(--green); box-shadow: 0 0 0 3px rgba(15,159,120,.14); }
+.account-button.cloud-connected { color: #08785b; border-color: rgba(15,159,120,.25); background: #f0fbf7; }
+.account-dialog {
+  width: min(460px, calc(100vw - 28px)); padding: 0; border: 1px solid rgba(65,56,112,.14);
+  border-radius: 18px; background: #fff; box-shadow: 0 30px 90px rgba(24,19,54,.25);
+}
+.account-dialog form { display: grid; gap: 18px; padding: 24px; }
+.account-dialog-heading { display: grid; grid-template-columns: 42px 1fr 34px; gap: 12px; align-items: center; }
+.cloud-mark { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 12px; color: #fff; background: linear-gradient(145deg,#7669ed,#5145bc); font-size: 19px; }
+.account-dialog-heading > div > span { color: var(--violet); font-size: 8px; font-weight: 800; letter-spacing: .15em; }
+.account-dialog-heading h2 { margin: 4px 0 0; font: 750 20px "Manrope",sans-serif; }
+.account-dialog-heading button { width: 34px; height: 34px; border: 0; border-radius: 9px; color: var(--muted); background: #f2f3f6; font-size: 20px; cursor: pointer; }
+.account-dialog > form > p { margin: -5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.account-fields { display: grid; gap: 12px; }
+.account-fields label { display: grid; gap: 6px; color: #555e6c; font-size: 10px; font-weight: 700; }
+.account-fields input { width: 100%; height: 43px; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; color: var(--ink); background: #fff; font: 500 12px "DM Sans",sans-serif; }
+.account-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.account-actions button, .account-signed-in button { min-height: 42px; border: 1px solid var(--border); border-radius: 10px; background: #fff; font-size: 10px; font-weight: 750; cursor: pointer; }
+.account-actions .account-primary { color: #fff; border-color: transparent; background: var(--violet); }
+.account-signed-in { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid #cfeadf; border-radius: 11px; background: #f3fbf7; font-size: 10px; }
+.account-signed-in button { min-height: 34px; padding: 0 12px; color: var(--rose); }
+.account-note { color: var(--subtle); font-size: 9px; line-height: 1.5; }
+.dark-mode .account-button { color: var(--muted); border-color: var(--border); background: #191e2b; }
+.dark-mode .account-button.cloud-connected { color: #7de0bd; border-color: rgba(74,201,157,.3); background: #172a25; }
+.dark-mode .account-dialog { color: var(--ink); border-color: #343a4b; background: #171b27; }
+.dark-mode .account-dialog-heading button, .dark-mode .account-fields input,
+.dark-mode .account-actions button { color: var(--ink); border-color: #343a4b; background: #1d2230; }
+.dark-mode .account-actions .account-primary { color: #fff; background: var(--violet); }
+.dark-mode .account-signed-in { border-color: #285244; background: #172823; }
+@media (max-width: 1180px) { .account-button { width: 38px; padding: 0; justify-content: center; } .account-button b { display: none; } }
+@media (max-width: 680px) { .github-button { display: none; } .account-dialog form { padding: 20px; } }
