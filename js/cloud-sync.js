@@ -5,6 +5,7 @@
   const configured = Boolean(config.url && config.publishableKey);
   let client = null;
   let user = null;
+  let lastAuthEvent = null;
   const listeners = new Set();
 
   function emit() {
@@ -20,7 +21,8 @@
     const { data, error } = await client.auth.getSession();
     if (error) throw error;
     user = data.session?.user || null;
-    client.auth.onAuthStateChange((_event, session) => {
+    client.auth.onAuthStateChange((event, session) => {
+      lastAuthEvent = event;
       user = session?.user || null;
       emit();
     });
@@ -72,6 +74,29 @@
     });
     if (error) throw error;
   }
+  async function requestPasswordReset(email) {
+    if (!client) throw new Error("Cloud storage is not configured");
+    const canRedirect = /^https?:$/.test(global.location?.protocol || "");
+    const redirectTo = canRedirect ? new URL(".", global.location.href).href : undefined;
+    const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw error;
+  }
+
+  async function updatePassword(password) {
+    if (!client || !user) throw new Error("Sign in before changing your password");
+    const { error } = await client.auth.updateUser({ password });
+    if (error) throw error;
+  }
+
+  async function deleteAccount() {
+    if (!client || !user) throw new Error("Sign in before deleting your account");
+    const { error } = await client.rpc("delete_own_account");
+    if (error) throw error;
+    await client.auth.signOut({ scope: "local" });
+    user = null;
+    emit();
+  }
+
   async function saveBoard(id, board) {
     if (!client || !user) return false;
     const { error } = await client.from("canvases").upsert({
@@ -119,11 +144,15 @@
     configured,
     init,
     getUser: () => user,
+    getLastAuthEvent: () => lastAuthEvent,
     onUserChange(listener) { listeners.add(listener); return () => listeners.delete(listener); },
     signIn,
     signUp,
     signOut,
     resendConfirmation,
+    requestPasswordReset,
+    updatePassword,
+    deleteAccount,
     saveBoard,
     loadBoard,
     listBoards,

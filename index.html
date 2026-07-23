@@ -4,8 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#15122b">
+  <meta name="description" content="IdeaCanvas is a private, local-first visual workspace for notes, diagrams, drawings, and annotated images.">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta property="og:title" content="IdeaCanvas â€” Visual Thinking Studio">
+  <meta property="og:description" content="Turn loose thoughts into clear visual plans.">
+  <meta property="og:type" content="website">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://epjlxqggvdyafznurfqm.supabase.co wss://epjlxqggvdyafznurfqm.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
   <title>IdeaCanvas - Visual Thinking Studio</title>
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Lora:wght@400;500;600;700&family=Manrope:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -244,13 +251,19 @@
       <div class="account-actions" id="signedOutActions">
         <button type="button" id="createAccountButton">Create account</button>
         <button type="submit" class="account-primary">Sign in</button>
+        <button type="button" class="account-link" id="forgotPasswordButton">Forgot password?</button>
         <button type="button" class="resend-confirmation" id="resendConfirmationButton" hidden>Resend confirmation email</button>
       </div>
       <div class="account-signed-in" id="signedInActions" hidden>
         <span>Signed in as <b id="accountEmailLabel"></b></span>
-        <button type="button" id="signOutButton">Sign out</button>
+        <div class="account-management">
+          <button type="button" id="changePasswordButton">Change password</button>
+          <button type="button" id="signOutButton">Sign out</button>
+          <button type="button" class="danger-text" id="deleteAccountButton">Delete account</button>
+        </div>
       </div>
       <small class="account-note" id="accountNote">Cloud storage must be configured by the site owner.</small>
+      <small class="account-legal"><a href="privacy.html" target="_blank">Privacy</a><span>Â·</span><a href="terms.html" target="_blank">Terms</a><span>Â·</span><a href="https://github.com/404BroNotFound/IdeaCanvas/issues" target="_blank" rel="noopener noreferrer">Support</a></small>
     </form>
   </dialog>
   <dialog class="action-dialog" id="actionDialog">

@@ -15,6 +15,8 @@ notes, plans, and annotated images directly in the browser.
 - Mind map, process flow, brainstorming, roadmap, Kanban, and wireframe layouts
 - JSON backups plus SVG and high-resolution PNG exports
 - Multiple canvases stored locally with optional authenticated Supabase cloud sync
+- Password recovery, password changes, and self-service cloud account deletion
+- Installable offline app shell, privacy information, and automated project checks
 
 ## Getting Started
 
@@ -77,6 +79,11 @@ also synced to that user's private cloud workspace.
    key (or legacy `anon` key).
 4. Add both values to `js/supabase-config.js`.
 5. Serve the project over HTTP/HTTPS and use the account button in the header.
+6. In **Authentication > URL Configuration**, set the Site URL and allowed redirect URL to the deployed IdeaCanvas URL.
+
+When updating an existing installation, run `supabase/schema.sql` again to add the secured `delete_own_account` function used by the account deletion button.
+
+Supabase's built-in email sender is intended for testing and has a very small shared rate limit. Before inviting real users, connect a custom SMTP provider in **Authentication > Emails > SMTP Settings**.
 
 Only use the public publishable/anonymous key in the browser. Never place the
 `service_role` key in this repository. Row Level Security in `schema.sql` ensures
@@ -104,3 +111,17 @@ IdeaCanvas/
 
 IdeaCanvas is designed for current versions of Chrome, Edge, Firefox, and
 Safari on desktop and touch devices.
+
+## Validation
+
+Run the dependency-free project checks with:
+
+```bash
+npm test
+```
+
+GitHub Actions runs the same checks on every push and pull request.
+
+## Deployment
+
+The production site is available at [404bronotfound.github.io/IdeaCanvas](https://404bronotfound.github.io/IdeaCanvas/). Pushes to `main` are validated and deployed through GitHub Actions.

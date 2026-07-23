@@ -34,3 +34,16 @@ on public.canvases for delete to authenticated
 using ((select auth.uid()) = user_id);
 
 grant select, insert, update, delete on public.canvases to authenticated;
+-- Allows an authenticated user to permanently remove only their own account.
+-- Their canvases are removed automatically by the foreign key above.
+create or replace function public.delete_own_account()
+returns void
+language sql
+security definer
+set search_path = ''
+as $$
+  delete from auth.users where id = (select auth.uid());
+$$;
+
+revoke all on function public.delete_own_account() from public;
+grant execute on function public.delete_own_account() to authenticated;

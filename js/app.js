@@ -90,6 +90,7 @@ let imageReplaceTargetId = null;
 let selectedDrawingId = null;
 let selectedConnectionId = null;
 let welcomeDismissed = false;
+let recoveryPromptShown = false;
 
 // Small utilities -----------------------------------------------------------
 function applyTheme(theme, { persist = true } = {}) {
@@ -100,7 +101,7 @@ function applyTheme(theme, { persist = true } = {}) {
   const button = document.querySelector("#themeToggleButton");
   button.setAttribute("aria-pressed", String(isDark));
   button.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
-  button.querySelector("span").textContent = isDark ? "☀" : "☾";
+  button.querySelector("span").textContent = isDark ? "Light" : "Dark";
   if (persist) localStorage.setItem(THEME_KEY, theme);
 }
 
@@ -154,6 +155,26 @@ function readImageDimensions(source) {
   });
 }
 
+async function optimizeUploadedImage(file) {
+  const original = await fileToDataUrl(file);
+  const dimensions = await readImageDimensions(original);
+  const maxDimension = 1600;
+  const scale = Math.min(1, maxDimension / Math.max(dimensions.width, dimensions.height));
+  const width = Math.max(1, Math.round(dimensions.width * scale));
+  const height = Math.max(1, Math.round(dimensions.height * scale));
+  const image = new Image();
+  await new Promise((resolve, reject) => {
+    image.onload = resolve;
+    image.onerror = reject;
+    image.src = original;
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  canvas.getContext("2d").drawImage(image, 0, 0, width, height);
+  return { source: canvas.toDataURL("image/webp", 0.82), dimensions: { width, height } };
+}
+
 function openImagePicker(replaceNodeId = null) {
   imageReplaceTargetId = replaceNodeId;
   elements.imageUploadInput.click();
@@ -172,8 +193,7 @@ async function addImageFromFile(file) {
   }
 
   try {
-    const source = await fileToDataUrl(file);
-    const dimensions = await readImageDimensions(source);
+    const { source, dimensions } = await optimizeUploadedImage(file);
     const maxWidth = 360;
     const maxHeight = 280;
     const ratio = Math.min(maxWidth / dimensions.width, maxHeight / dimensions.height, 1);
@@ -271,8 +291,8 @@ function markUnsaved() {
   updateHistoryControls();
 }
 
-function markSaved() {
-  elements.saveStatus.textContent = "All changes saved";
+function markSaved(cloudSaved = false) {
+  elements.saveStatus.textContent = cloudSaved ? "Saved locally and to cloud" : "Saved on this device";
   document.querySelector(".status-dot").style.background = "#0f9f78";
 }
 
@@ -1088,15 +1108,18 @@ function centerContent() {
   updateWorldTransform();
 }
 
-function openActionDialog({ title, message, value = null, confirmLabel = "Continue", danger = false }) {
+function openActionDialog({ title, message, value = null, confirmLabel = "Continue", danger = false, inputType = "text", inputLabel = "Name" }) {
   const dialog = document.querySelector("#actionDialog");
   document.querySelector("#actionDialogTitle").textContent = title;
   document.querySelector("#actionDialogMessage").textContent = message || "";
   document.querySelector("#actionDialogConfirm").textContent = confirmLabel;
   document.querySelector("#actionDialogConfirm").classList.toggle("danger", danger);
-  document.querySelector("#actionDialogIcon").textContent = danger ? "!" : "✦";
+  document.querySelector("#actionDialogIcon").textContent = danger ? "!" : "*";
   const inputWrap = document.querySelector("#actionInputWrap");
   const input = document.querySelector("#actionDialogInput");
+  input.type = inputType;
+  input.autocomplete = inputType === "password" ? "new-password" : "off";
+  inputWrap.querySelector("span").textContent = inputLabel;
   inputWrap.hidden = value === null;
   input.value = value ?? "";
   input.removeAttribute("aria-invalid");
@@ -1352,7 +1375,7 @@ function updateAccountUI() {
   document.querySelector("#accountEmailLabel").textContent = user?.email || "";
   note.textContent = !configured
     ? "Cloud storage is not connected yet. Add the Supabase project settings in js/supabase-config.js."
-    : user ? "Changes save locally first, then sync securely to your account." : "Create a separate IdeaCanvas password—never enter your Gmail password here.";
+    : user ? "Changes save locally first, then sync securely to your account." : "Create a separate IdeaCanvas password--never enter your Gmail password here.";
 }
 
 function openAccountDialog() {
@@ -1385,12 +1408,69 @@ async function initializeCloud() {
   try {
     await cloud.init();
     cloudReady = true;
-    cloud.onUserChange(updateAccountUI);
+    cloud.onUserChange(() => {
+      updateAccountUI();
+      if (cloud.getLastAuthEvent?.() === "PASSWORD_RECOVERY" && !recoveryPromptShown) {
+        recoveryPromptShown = true;
+        changeCloudPassword(true);
+      }
+    });
   } catch (error) {
     console.warn("Cloud initialization failed.", error);
-    showToast("Cloud unavailable — saving locally");
+    showToast("Cloud unavailable -- saving locally");
   }
   updateAccountUI();
+}
+
+async function requestPasswordReset() {
+  const emailInput = document.querySelector("#accountEmail");
+  if (!emailInput.reportValidity()) return;
+  try {
+    await cloud.requestPasswordReset(emailInput.value.trim());
+    showToast("Password reset email sent -- check your inbox");
+  } catch (error) {
+    showToast(/rate limit/i.test(error.message || "")
+      ? "Email limit reached -- wait before trying again"
+      : error.message || "Could not send the reset email");
+  }
+}
+
+async function changeCloudPassword(fromRecovery = false) {
+  const password = await openActionDialog({
+    title: fromRecovery ? "Choose a new password" : "Change your password",
+    message: "Use at least 8 characters. This password is only for IdeaCanvas.",
+    value: "",
+    inputType: "password",
+    inputLabel: "New password",
+    confirmLabel: "Update password",
+  });
+  if (!password) return;
+  if (password.length < 8) return showToast("Password must contain at least 8 characters");
+  try {
+    await cloud.updatePassword(password);
+    document.querySelector("#accountDialog").close();
+    showToast("Password updated successfully");
+  } catch (error) {
+    showToast(error.message || "Could not update password");
+  }
+}
+
+async function deleteCloudAccount() {
+  const confirmed = await openActionDialog({
+    title: "Permanently delete your account?",
+    message: "This removes your cloud canvases and account. Export any work you want to keep first.",
+    confirmLabel: "Delete my account",
+    danger: true,
+  });
+  if (!confirmed) return;
+  try {
+    await cloud.deleteAccount();
+    document.querySelector("#accountDialog").close();
+    updateAccountUI();
+    showToast("Cloud account deleted -- local canvases remain on this device");
+  } catch (error) {
+    showToast(error.message || "Could not delete the account");
+  }
 }
 
 async function signInToCloud(event) {
@@ -1401,7 +1481,7 @@ async function signInToCloud(event) {
     await cloud.signIn(email, password);
     await saveBoard({ silent: true });
     updateAccountUI();
-    showToast("Signed in — canvas synced");
+    showToast("Signed in -- canvas synced");
   } catch (error) {
     document.querySelector("#resendConfirmationButton").hidden = !/confirm/i.test(error.message || "");
     showToast(error.message || "Could not sign in");
@@ -1413,7 +1493,7 @@ async function resendConfirmationEmail() {
   if (!emailInput.reportValidity()) return;
   try {
     await cloud.resendConfirmation(emailInput.value.trim());
-    showToast("Confirmation email sent — check your inbox");
+    showToast("Confirmation email sent -- check your inbox");
     document.querySelector("#resendConfirmationButton").hidden = true;
   } catch (error) {
     showToast(error.message || "Could not resend confirmation email");
@@ -1430,7 +1510,7 @@ async function createCloudAccount() {
     if (result.needsConfirmation) showToast("Check your email to confirm your account");
     else {
       await saveBoard({ silent: true });
-      showToast("Account created — canvas synced");
+      showToast("Account created -- canvas synced");
     }
     updateAccountUI();
   } catch (error) {
@@ -1443,7 +1523,7 @@ async function signOutOfCloud() {
     await cloud.signOut();
     updateAccountUI();
     document.querySelector("#accountDialog").close();
-    showToast("Signed out — local saving continues");
+    showToast("Signed out -- local saving continues");
   } catch (error) {
     showToast(error.message || "Could not sign out");
   }
@@ -1508,15 +1588,18 @@ function loadLocalBoard() {
       || (currentBoardId === "default" ? localStorage.getItem(STORAGE_KEY) : null);
     const savedBoard = JSON.parse(raw || "null");
     if (savedBoard) applyLoadedBoard(savedBoard);
+    return savedBoard;
   } catch (error) {
     console.warn("Could not load the local canvas.", error);
     showToast("This locally saved canvas could not be opened");
+    return null;
   }
 }
 
 async function saveBoard({ silent = false } = {}) {
   const board = { ...buildBoardPayload(), updatedAt: new Date().toISOString() };
   let cloudSaved = false;
+  let cloudFailed = false;
   try {
     localStorage.setItem(STORAGE_KEY + ":" + currentBoardId, JSON.stringify(board));
     localStorage.setItem("ideacanvas-current-board", currentBoardId);
@@ -1525,10 +1608,16 @@ async function saveBoard({ silent = false } = {}) {
       try {
         cloudSaved = await cloud.saveBoard(currentBoardId, board);
       } catch (cloudError) {
+        cloudFailed = true;
         console.warn("Cloud save failed; the local copy is safe.", cloudError);
       }
     }
-    markSaved();
+    if (cloudFailed) {
+      elements.saveStatus.textContent = "Saved locally -- cloud sync failed";
+      document.querySelector(".status-dot").style.background = "#e67a42";
+    } else {
+      markSaved(cloudSaved);
+    }
     if (!silent) showToast(cloudSaved ? "Saved locally and to cloud" : "Saved on this device");
   } catch (error) {
     console.warn("Local save failed.", error);
@@ -1540,14 +1629,22 @@ async function saveBoard({ silent = false } = {}) {
 async function loadBoard(boardId = currentBoardId) {
   currentBoardId = boardId;
   localStorage.setItem("ideacanvas-current-board", currentBoardId);
-  loadLocalBoard();
+  const localBoard = loadLocalBoard();
   if (cloudReady && cloud?.getUser()) {
     try {
       const cloudBoard = await cloud.loadBoard(currentBoardId);
       if (cloudBoard) {
-        applyLoadedBoard(cloudBoard);
-        localStorage.setItem(STORAGE_KEY + ":" + currentBoardId, JSON.stringify(cloudBoard));
-        updateLocalBoardIndex(cloudBoard);
+        const localTime = new Date(localBoard?.updatedAt || 0).getTime();
+        const cloudTime = new Date(cloudBoard.updatedAt || 0).getTime();
+        if (localBoard && localTime > cloudTime) {
+          await cloud.saveBoard(currentBoardId, localBoard);
+          applyLoadedBoard(localBoard);
+          showToast("Newer device copy synced to cloud");
+        } else {
+          applyLoadedBoard(cloudBoard);
+          localStorage.setItem(STORAGE_KEY + ":" + currentBoardId, JSON.stringify(cloudBoard));
+          updateLocalBoardIndex(cloudBoard);
+        }
       }
     } catch (error) {
       console.warn("Cloud load failed; using the local copy.", error);
@@ -1670,7 +1767,7 @@ async function deleteFile(boardId) {
   if (!confirmed) return;
   if (cloudReady && cloud?.getUser()) {
     try { await cloud.deleteBoard(boardId); }
-    catch (error) { return showToast("Cloud delete failed — try again"); }
+    catch (error) { return showToast("Cloud delete failed -- try again"); }
   }
   localStorage.removeItem(STORAGE_KEY + ":" + boardId);
   localStorage.setItem(BOARD_INDEX_KEY, JSON.stringify(
@@ -1824,7 +1921,7 @@ function toggleFocusMode() {
   const enabled = document.body.classList.toggle("focus-mode");
   document.querySelector("#focusModeButton").setAttribute("aria-pressed", String(enabled));
   if (enabled) elements.inspector.classList.remove("mobile-open");
-  showToast(enabled ? "Focus mode enabled — press Esc to exit" : "Focus mode disabled");
+  showToast(enabled ? "Focus mode enabled -- press Esc to exit" : "Focus mode disabled");
 }
 
 async function renameBoard() {
@@ -2053,6 +2150,9 @@ function bindInterfaceEvents() {
   document.querySelector("#signOutButton").addEventListener("click", signOutOfCloud);
   document.querySelector("#togglePasswordButton").addEventListener("click", toggleAccountPassword);
   document.querySelector("#resendConfirmationButton").addEventListener("click", resendConfirmationEmail);
+  document.querySelector("#forgotPasswordButton").addEventListener("click", requestPasswordReset);
+  document.querySelector("#changePasswordButton").addEventListener("click", () => changeCloudPassword(false));
+  document.querySelector("#deleteAccountButton").addEventListener("click", deleteCloudAccount);
   document.querySelector("#addImageButton").addEventListener("click", () => openImagePicker());
   document.querySelector("#inspectorImageButton").addEventListener("click", () => openImagePicker());
   elements.imageUploadInput.addEventListener("change", (event) => addImageFromFile(event.target.files[0]));
@@ -2156,6 +2256,8 @@ function bindInterfaceEvents() {
   document.querySelector("#sidebarToggleButton").addEventListener("click", toggleSidebar);
   document.querySelector("#mobileInspectorButton").addEventListener("click", toggleInspector);
     window.addEventListener("resize", syncPanelState);
+  window.addEventListener("offline", () => { elements.saveStatus.textContent = "Offline -- saving on this device"; });
+  window.addEventListener("online", () => { showToast("Back online -- syncing changes"); saveBoard({ silent: true }); });
 
   elements.viewport.addEventListener("dragover", (event) => {
     if (!event.dataTransfer.types.includes("Files")) return;
@@ -2310,3 +2412,7 @@ async function startApplication() {
   await loadBoard();
 }
 startApplication();
+
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+}
