@@ -104,7 +104,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
   white-space: nowrap;
 }
 .nav-tool:hover::after { opacity: 1; transform: translateX(0); }
-.user-avatar { display: grid; width: 35px; height: 35px; place-items: center; border: 2px solid #344052; border-radius: 11px; color: white; background: #273143; font-size: 10px; font-weight: 700; }
 
 /* Workspace header -------------------------------------------------------- */
 .workspace { position: relative; min-width: 0; background: var(--surface); }
@@ -660,7 +659,6 @@ button, a, input, [contenteditable="true"] { touch-action: manipulation; }
     padding-top: 10px; border-top: 1px solid rgba(255,255,255,.08);
   }
   .nav-footer .nav-tool { width: 128px; }
-  .user-avatar { border-radius: 10px; }
   .canvas-viewport {
     background-color: #f7f7fc;
     background-image:
@@ -875,7 +873,6 @@ dialog[open] { animation: dialog-in 180ms ease-out; }
   .sidebar-compact .sidebar-shortcuts span { color: #b0b7c5; font-size: 15px; }
   .sidebar-compact .nav-footer { width: 100%; flex-direction: column; }
   .sidebar-compact .nav-footer .nav-tool { width: 44px; }
-  .sidebar-compact .user-avatar { display: none; }
   .sidebar-compact .sidebar-toggle { right: -13px; }
 }
 @media (min-width: 981px) and (max-width: 1120px) {
