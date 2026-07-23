@@ -46,7 +46,7 @@ You can also use a static preview extension such as Live Server.
 | --- | --- |
 | Select | `V` |
 | Pan canvas | `H` or hold `Space` and drag |
-| Pencil | `P` |
+| Marker | `P` |
 | Eraser | `E` |
 | Arrow | `L` |
 | Rectangle | `R` |

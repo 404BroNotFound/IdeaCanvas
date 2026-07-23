@@ -132,6 +132,15 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .header-center button:hover { color: var(--violet); background: var(--violet-soft); }
 .header-center span { width: 1px; height: 20px; margin: 0 5px; background: var(--border); }
 .header-actions { gap: 10px; }
+.github-button {
+  display: inline-flex; height: 38px; gap: 8px; align-items: center; justify-content: center;
+  padding: 0 13px; border: 1px solid var(--border); border-radius: 9px;
+  color: var(--ink); background: white; font-size: 11px; font-weight: 700; text-decoration: none;
+  transition: color 160ms ease, border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+.github-button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.github-button:hover { color: var(--violet); border-color: #c8c2f0; background: var(--violet-soft); transform: translateY(-1px); }
+.github-button:focus-visible { outline: 3px solid rgba(100,88,214,.28); outline-offset: 2px; }
 .collaborators { margin-right: 4px; }
 .avatar { display: grid; width: 30px; height: 30px; margin-left: -7px; place-items: center; border: 2px solid white; border-radius: 10px; color: white; font-size: 9px; font-weight: 700; }
 .avatar.coral { background: #e87961; }.avatar.aqua { background: #2c99a3; }.avatar.count { background: #2d3747; }
@@ -468,6 +477,8 @@ button, a, input, [contenteditable="true"] { touch-action: manipulation; }
 }
 
 @media (max-width: 1180px) {
+  .github-button { width: 38px; padding: 0; }
+  .github-button span { display: none; }
   .header-center { position: static; margin-left: auto; transform: none; }
   .collaborators { display: none; }
   .workspace-header { gap: 14px; }
@@ -1069,7 +1080,7 @@ body.dark-mode {
 .dark-mode .tool-guide, .dark-mode .selection-actions,
 .dark-mode .selection-actions button, .dark-mode .workspace-actions button,
 .dark-mode .wide-action, .dark-mode .segment-control button,
-.dark-mode .mobile-inspector-button, .dark-mode .theme-toggle {
+.dark-mode .mobile-inspector-button, .dark-mode .theme-toggle, .dark-mode .github-button {
   color: var(--muted); border-color: var(--border); background: #191e2b;
 }
 .dark-mode .header-center button:hover, .dark-mode .canvas-controls button:hover,
@@ -1157,4 +1168,37 @@ body.dark-mode {
 .dark-mode .selection-actions.visible {
   border-color: rgba(169,159,255,.78);
   box-shadow: 0 0 0 3px rgba(169,159,255,.14), 0 14px 36px rgba(0,0,0,.3);
+}
+
+/* Professional marker and eraser controls */
+.nav-tool[data-tool="draw"].active,
+.nav-tool[data-tool="eraser"].active {
+  color: #fff;
+  background: linear-gradient(145deg,#7669ed,#5145bc);
+  box-shadow: 0 0 0 3px rgba(135,122,242,.16), 0 8px 20px rgba(82,69,188,.38);
+}
+.canvas-viewport[data-tool="draw"] {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cpath d='M5 22 18 7l5 4-13 14H5Z' fill='%23fff' stroke='%236458d6' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='m16 9 5 4' stroke='%236458d6' stroke-width='2'/%3E%3C/svg%3E") 5 24, crosshair;
+}
+.canvas-viewport[data-tool="eraser"] {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cpath d='m5 17 10-11 8 7-10 10H8Z' fill='%23fff' stroke='%236458d6' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='m10 11 8 7' stroke='%236458d6' stroke-width='2'/%3E%3C/svg%3E") 6 22, cell;
+}
+.segment-control button.active {
+  border-color: #8f83e8;
+  color: #6458d6;
+  background: #f0edff;
+  box-shadow: 0 0 0 2px rgba(100,88,214,.13), 0 7px 16px rgba(73,61,151,.1);
+}
+.segment-control button.active i {
+  box-shadow: 0 0 0 3px rgba(100,88,214,.13);
+}
+.dark-mode .segment-control button.active {
+  border-color: #998ef2 !important;
+  color: #c4bdff !important;
+  background: #302a55 !important;
+  box-shadow: 0 0 0 3px rgba(169,159,255,.18), 0 8px 20px rgba(0,0,0,.24);
+}
+.dark-mode .segment-control button.active i {
+  background: #c4bdff;
+  box-shadow: 0 0 0 4px rgba(169,159,255,.16), 0 0 9px rgba(169,159,255,.55);
 }

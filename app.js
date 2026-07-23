@@ -354,17 +354,15 @@ function setTool(toolName) {
 
   const cursors = {
     hand: "grab",
-    draw: "crosshair",
-    eraser: "cell",
     line: "crosshair",
     connector: "crosshair",
   };
-  elements.viewport.style.cursor = cursors[toolName] || "default";
+  elements.viewport.style.cursor = cursors[toolName] || "";
 
   const labels = {
     select: "Selection",
     hand: "Canvas",
-    draw: "Pencil",
+    draw: "Marker",
     eraser: "Eraser",
     line: "Arrow",
     connector: "Connector",
@@ -381,7 +379,7 @@ function setTool(toolName) {
   const guides = {
     select: ["V", "Select tool", "Your canvas stays fixed until you choose Move, Space-drag, or unlock navigation."],
     hand: ["H", "Move canvas", "Drag anywhere to navigate your planning space."],
-    draw: ["P", "Pencil", "Sketch freely. Choose color and weight from the Style panel."],
+    draw: ["P", "Marker", "Create smooth freehand strokes. Choose color and size from the Style panel."],
     eraser: ["E", "Eraser", "Click or drag across strokes and unlocked objects to remove them."],
     line: ["L", "Arrow", "Drag to communicate direction, sequence, or flow."],
     connector: ["C", "Connector", "Click one object, then another, to link them."],
@@ -1872,7 +1870,11 @@ function bindInterfaceEvents() {
   queryAll("#strokeWidths button").forEach((button) => {
     button.addEventListener("click", () => {
       state.strokeWidth = Number(button.dataset.width);
-      queryAll("#strokeWidths button").forEach((item) => item.classList.toggle("active", item === button));
+      queryAll("#strokeWidths button").forEach((item) => {
+        const active = item === button;
+        item.classList.toggle("active", active);
+        item.setAttribute("aria-pressed", String(active));
+      });
     });
   });
 

@@ -24,8 +24,8 @@
         <button class="nav-tool active" data-tool="select" data-label="Select"><svg viewBox="0 0 24 24"><path d="m6 4 11 8-5 1-2 5z"/></svg></button>
         <button class="nav-tool" data-tool="hand" data-label="Move canvas"><svg viewBox="0 0 24 24"><path d="M7 11V7a2 2 0 0 1 4 0v3-5a2 2 0 0 1 4 0v5-3a2 2 0 0 1 4 0v7c0 4-3 7-7 7h-1c-3 0-5-2-6-4l-2-4a2 2 0 0 1 4-2Z"/></svg></button>
         <span class="nav-section-label">Create</span>
-        <button class="nav-tool" data-tool="draw" data-label="Draw"><svg viewBox="0 0 24 24"><path d="m4 20 4-1L19 8l-3-3L5 16z"/><path d="m14 7 3 3"/></svg></button>
-        <button class="nav-tool" data-tool="eraser" data-label="Eraser"><svg viewBox="0 0 24 24"><path d="m4 15 9-10 7 7-7 8H8z"/><path d="m9 10 7 7M13 20h8"/></svg></button>
+        <button class="nav-tool" data-tool="draw" data-label="Marker"><svg viewBox="0 0 24 24"><path d="m6 17 9.5-11 3.5 3-9.5 11H6z"/><path d="m13.5 8.5 3.5 3M4 21h8"/></svg></button>
+        <button class="nav-tool" data-tool="eraser" data-label="Eraser"><svg viewBox="0 0 24 24"><path d="m4.5 14.5 8.8-9.8 6.2 5.6-8.7 9.2H7z"/><path d="m9 9.5 6.2 5.7M11 19.5h9"/></svg></button>
         <button class="nav-tool" data-tool="line" data-label="Arrow"><svg viewBox="0 0 24 24"><path d="M5 19 19 5M12 5h7v7"/></svg></button>
         <button class="nav-tool" data-tool="rect" data-label="Rectangle"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></button>
         <button class="nav-tool" data-tool="ellipse" data-label="Ellipse"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8" ry="7"/></svg></button>
@@ -62,6 +62,10 @@
           <button id="gridButton" title="Toggle grid" aria-pressed="true">Grid</button>
         </div>
         <div class="header-actions">
+          <a class="github-button" href="https://github.com/404BroNotFound/IdeaCanvas" target="_blank" rel="noopener noreferrer" aria-label="View IdeaCanvas on GitHub" title="View on GitHub">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v13a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 18.5z"/><path d="M8 3v18M12 8h4M12 12h4"/></svg>
+            <span>View on GitHub</span>
+          </a>
           <button class="theme-toggle" id="themeToggleButton" aria-label="Switch to dark mode" aria-pressed="false"><span aria-hidden="true">&#9790;</span></button>
           <button class="mobile-inspector-button" id="mobileInspectorButton" aria-label="Toggle style panel" aria-controls="styleInspector" aria-expanded="true">&#9881;</button>
           <div class="collaborators"><span class="avatar coral">AN</span><span class="avatar aqua">MK</span><span class="avatar count">+2</span></div>
@@ -114,8 +118,8 @@
         </div>
       </section>
       <section class="property-section">
-        <label class="property-label">Stroke</label>
-        <div class="segment-control" id="strokeWidths"><button class="active" data-width="2"><i class="thin"></i>Fine</button><button data-width="4"><i class="medium"></i>Medium</button><button data-width="7"><i class="bold"></i>Bold</button></div>
+        <label class="property-label">Marker size</label>
+        <div class="segment-control" id="strokeWidths"><button class="active" data-width="2" aria-pressed="true"><i class="thin"></i>Fine</button><button data-width="4" aria-pressed="false"><i class="medium"></i>Medium</button><button data-width="7" aria-pressed="false"><i class="bold"></i>Bold</button></div>
       </section>
       <section class="property-section typography-section">
         <div class="section-heading"><label class="property-label">Typography</label><span id="fontSizeValue">14 px</span></div>
@@ -202,7 +206,7 @@
 
   <dialog class="shortcut-dialog" id="shortcutDialog">
     <div class="dialog-heading"><div><span>WORK FASTER</span><h2>Keyboard shortcuts</h2></div><button id="closeShortcuts">&times;</button></div>
-    <div class="shortcut-grid"><span>Select <kbd>V</kbd></span><span>Pan <kbd>H</kbd></span><span>Pencil <kbd>P</kbd></span><span>Eraser <kbd>E</kbd></span><span>Arrow <kbd>L</kbd></span><span>Rectangle <kbd>R</kbd></span><span>Ellipse <kbd>O</kbd></span><span>Decision <kbd>G</kbd></span><span>Note <kbd>N</kbd></span><span>Text <kbd>T</kbd></span><span>Edit selection <kbd>Enter</kbd></span><span>Delete <kbd>Del</kbd></span><span>Find <kbd>Ctrl F</kbd></span><span>Duplicate <kbd>Ctrl D</kbd></span><span>Task <kbd>K</kbd></span><span>Section <kbd>F</kbd></span><span>Select or move <kbd>Arrows</kbd></span><span>Move 10px <kbd>Shift + Arrows</kbd></span><span>Change selection <kbd>Alt + Arrows</kbd></span><span>Copy <kbd>Ctrl C</kbd></span><span>Paste <kbd>Ctrl V</kbd></span><span>Zoom <kbd>+ / -</kbd></span><span>Fit view <kbd>0</kbd></span><span>Next object <kbd>Tab</kbd></span><span>Clear selection <kbd>Esc</kbd></span></div>
+    <div class="shortcut-grid"><span>Select <kbd>V</kbd></span><span>Pan <kbd>H</kbd></span><span>Marker <kbd>P</kbd></span><span>Eraser <kbd>E</kbd></span><span>Arrow <kbd>L</kbd></span><span>Rectangle <kbd>R</kbd></span><span>Ellipse <kbd>O</kbd></span><span>Decision <kbd>G</kbd></span><span>Note <kbd>N</kbd></span><span>Text <kbd>T</kbd></span><span>Edit selection <kbd>Enter</kbd></span><span>Delete <kbd>Del</kbd></span><span>Find <kbd>Ctrl F</kbd></span><span>Duplicate <kbd>Ctrl D</kbd></span><span>Task <kbd>K</kbd></span><span>Section <kbd>F</kbd></span><span>Select or move <kbd>Arrows</kbd></span><span>Move 10px <kbd>Shift + Arrows</kbd></span><span>Change selection <kbd>Alt + Arrows</kbd></span><span>Copy <kbd>Ctrl C</kbd></span><span>Paste <kbd>Ctrl V</kbd></span><span>Zoom <kbd>+ / -</kbd></span><span>Fit view <kbd>0</kbd></span><span>Next object <kbd>Tab</kbd></span><span>Clear selection <kbd>Esc</kbd></span></div>
   </dialog>
   <dialog class="files-dialog" id="filesDialog">
     <div class="files-heading">
