@@ -1347,8 +1347,9 @@ function updateAccountUI() {
   const signedOut = document.querySelector("#signedOutActions");
   const signedIn = document.querySelector("#signedInActions");
   const note = document.querySelector("#accountNote");
-  label.textContent = user ? "Cloud saved" : "Local only";
+  label.textContent = user ? "Cloud saved" : "Sign in";
   button.classList.toggle("cloud-connected", Boolean(user));
+  button.setAttribute("aria-label", user ? "Open cloud account settings" : "Sign in to cloud storage");
   fields.hidden = Boolean(user) || !configured;
   signedOut.hidden = Boolean(user) || !configured;
   signedIn.hidden = !user;

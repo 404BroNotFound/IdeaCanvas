@@ -1249,8 +1249,11 @@ button:disabled { cursor: not-allowed; opacity: .45; }
   font-size: 10px; cursor: pointer;
 }
 .account-button:hover { color: var(--violet); border-color: #c8c2f0; background: var(--violet-soft); }
-.cloud-state-dot { width: 8px; height: 8px; border-radius: 50%; background: #a2a9b5; box-shadow: 0 0 0 3px rgba(162,169,181,.14); }
-.account-button.cloud-connected .cloud-state-dot { background: var(--green); box-shadow: 0 0 0 3px rgba(15,159,120,.14); }
+.account-cloud-icon { position: relative; display: grid; width: 19px; height: 19px; place-items: center; }
+.account-cloud-icon svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.account-cloud-icon::after { content: ""; position: absolute; right: -2px; bottom: -1px; width: 6px; height: 6px; border: 2px solid #fff; border-radius: 50%; background: #a2a9b5; }
+.account-button.cloud-connected .account-cloud-icon::after { background: var(--green); }
+.dark-mode .account-cloud-icon::after { border-color: #191e2b; }
 .account-button.cloud-connected { color: #08785b; border-color: rgba(15,159,120,.25); background: #f0fbf7; }
 .account-dialog {
   width: min(460px, calc(100vw - 28px)); padding: 0; border: 1px solid rgba(65,56,112,.14);
