@@ -35,6 +35,7 @@ const elements = {
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const STORAGE_KEY = "ideacanvas";
 const THEME_KEY = "ideacanvas-theme";
+const BOARD_INDEX_KEY = "ideacanvas-board-index";
 const LOCKED_ICON = '<svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
 const UNLOCKED_ICON = '<svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M9 10V7a4 4 0 0 1 7-2.6"/></svg>';
 let currentBoardId = localStorage.getItem("ideacanvas-current-board") || "default";
@@ -43,6 +44,7 @@ const KEY_TO_TOOL = {
   v: "select",
   h: "hand",
   p: "draw",
+  e: "eraser",
   l: "line",
   r: "rect",
   o: "ellipse",
@@ -83,6 +85,8 @@ let textFitFrame = null;
 let pendingAction = null;
 let typographySnapshotTaken = false;
 let imageReplaceTargetId = null;
+let selectedDrawingId = null;
+let selectedConnectionId = null;
 let welcomeDismissed = false;
 
 // Small utilities -----------------------------------------------------------
@@ -106,9 +110,8 @@ function toggleTheme() {
 function updateTypographyControls(node = null) {
   const fontSelect = document.querySelector("#fontFamilySelect");
   const sizeRange = document.querySelector("#fontSizeRange");
-  const isImage = node?.type === "image";
-  fontSelect.disabled = Boolean(isImage);
-  sizeRange.disabled = Boolean(isImage);
+  fontSelect.disabled = false;
+  sizeRange.disabled = false;
   fontSelect.value = node?.fontFamily || state.fontFamily;
   sizeRange.value = node?.fontSize || state.fontSize;
   document.querySelector("#fontSizeValue").textContent = sizeRange.value + " px";
@@ -121,7 +124,7 @@ function applyTypography({ fontFamily = state.fontFamily, fontSize = state.fontS
   state.fontSize = Number(fontSize);
   document.querySelector("#fontSizeValue").textContent = state.fontSize + " px";
 
-  if (!node || node.type === "image") return;
+  if (!node) return;
   if (snapshot) takeSnapshot();
   node.fontFamily = state.fontFamily;
   node.fontSize = state.fontSize;
@@ -183,7 +186,6 @@ async function addImageFromFile(file) {
     if (existing?.type === "image") {
       existing.src = source;
       existing.alt = file.name;
-      existing.text = file.name;
       existing.width = width;
       existing.height = height;
       renderCanvas();
@@ -199,10 +201,13 @@ async function addImageFromFile(file) {
         y: center.y - height / 2,
         width,
         height,
-        text: file.name,
+        text: "",
+        caption: "",
         alt: file.name,
         src: source,
         color: "#6458d6",
+        fontFamily: state.fontFamily,
+        fontSize: state.fontSize,
         locked: false,
       };
       state.nodes.push(node);
@@ -340,6 +345,7 @@ function toggleNavigationLock() {
 }
 function setTool(toolName) {
   state.tool = toolName;
+  elements.viewport.dataset.tool = toolName;
   if (toolName === "hand" && state.navigationLocked) setNavigationLocked(false, { silent: true });
 
   queryAll(".nav-tool[data-tool]").forEach((button) => {
@@ -349,6 +355,7 @@ function setTool(toolName) {
   const cursors = {
     hand: "grab",
     draw: "crosshair",
+    eraser: "cell",
     line: "crosshair",
     connector: "crosshair",
   };
@@ -358,6 +365,7 @@ function setTool(toolName) {
     select: "Selection",
     hand: "Canvas",
     draw: "Pencil",
+    eraser: "Eraser",
     line: "Arrow",
     connector: "Connector",
     rect: "Rectangle",
@@ -374,6 +382,7 @@ function setTool(toolName) {
     select: ["V", "Select tool", "Your canvas stays fixed until you choose Move, Space-drag, or unlock navigation."],
     hand: ["H", "Move canvas", "Drag anywhere to navigate your planning space."],
     draw: ["P", "Pencil", "Sketch freely. Choose color and weight from the Style panel."],
+    eraser: ["E", "Eraser", "Click or drag across strokes and unlocked objects to remove them."],
     line: ["L", "Arrow", "Drag to communicate direction, sequence, or flow."],
     connector: ["C", "Connector", "Click one object, then another, to link them."],
     rect: ["R", "Rectangle", "Add a labeled step, screen, or process block."],
@@ -392,6 +401,9 @@ function setTool(toolName) {
 
 function clearSelection() {
   queryAll(".node.selected").forEach((node) => node.classList.remove("selected"));
+  queryAll(".draw-path.selected").forEach((path) => path.classList.remove("selected"));
+  selectedDrawingId = null;
+  selectedConnectionId = null;
   elements.selectionActions.classList.remove("visible");
   updateTypographyControls();
 }
@@ -403,12 +415,46 @@ function selectNode(nodeId) {
   elements.selectionActions.classList.toggle("visible", Boolean(nodeElement));
   const node = getNodeById(nodeId);
   if (node) {
+    setNodeActionAvailability();
+    const editButton = document.querySelector("#editButton");
+    editButton.textContent = node.type === "image" ? "Write" : "Edit";
+    editButton.title = node.type === "image" ? "Write directly on this picture" : "Edit selected object";
     elements.inspectorTitle.textContent = node.type === "note" ? "Sticky note" : node.type;
     const lockButton = document.querySelector("#lockButton");
     lockButton.textContent = node.locked ? "Unlock" : "Lock";
     lockButton.setAttribute("aria-pressed", String(Boolean(node.locked)));
     updateTypographyControls(node);
   }
+}
+
+function selectDrawing(drawingId) {
+  clearSelection();
+  selectedDrawingId = drawingId;
+  const path = document.querySelector(`.canvas-drawing[data-drawing-id="${drawingId}"]`);
+  path?.classList.add("selected");
+  elements.selectionActions.classList.toggle("visible", Boolean(path));
+  elements.inspectorTitle.textContent = "Marker stroke";
+  ["editButton", "duplicateButton", "lockButton"].forEach((id) => {
+    document.querySelector("#" + id).disabled = true;
+  });
+}
+
+function selectConnection(connectionId) {
+  clearSelection();
+  selectedConnectionId = connectionId;
+  const path = document.querySelector(`.canvas-connection[data-connection-id="${connectionId}"]`);
+  path?.classList.add("selected");
+  elements.selectionActions.classList.toggle("visible", Boolean(path));
+  elements.inspectorTitle.textContent = "Connector";
+  ["editButton", "duplicateButton", "lockButton"].forEach((id) => {
+    document.querySelector("#" + id).disabled = true;
+  });
+}
+
+function setNodeActionAvailability() {
+  ["editButton", "duplicateButton", "lockButton"].forEach((id) => {
+    document.querySelector("#" + id).disabled = false;
+  });
 }
 
 // Canvas data ---------------------------------------------------------------
@@ -443,33 +489,70 @@ function addNode(type, x, y, text, width, height, color) {
 
 function deleteSelectedNode() {
   const selectedElement = getSelectedNodeElement();
-  if (!selectedElement) return;
+  if (!selectedElement && !selectedDrawingId && !selectedConnectionId) {
+    return showToast("Tap an object, stroke, or connector first");
+  }
 
-  const nodeId = selectedElement.dataset.id;
-  const selectedNode = getNodeById(nodeId);
-  if (selectedNode.locked) return showToast("Unlock this object before deleting it");
+  if (selectedElement) {
+    const selectedNode = getNodeById(selectedElement.dataset.id);
+    if (selectedNode.locked) return showToast("Unlock this object before deleting it");
+  }
   takeSnapshot();
-  state.nodes = state.nodes.filter((node) => node.id !== nodeId);
-  state.connections = state.connections.filter((connection) => (
-    connection.from !== nodeId && connection.to !== nodeId
-  ));
-  renderCanvas();
+  if (selectedDrawingId) {
+    state.drawings = state.drawings.filter((drawing) => drawing.id !== selectedDrawingId);
+  } else if (selectedConnectionId) {
+    state.connections = state.connections.filter((connection) => connection.id !== selectedConnectionId);
+  } else {
+    const nodeId = selectedElement.dataset.id;
+    state.nodes = state.nodes.filter((node) => node.id !== nodeId);
+    state.connections = state.connections.filter((connection) => (
+      connection.from !== nodeId && connection.to !== nodeId
+    ));
+  }
   clearSelection();
-  showToast("Object deleted");
+  renderCanvas();
+  showToast("Selection deleted");
 }
 
 // SVG rendering -------------------------------------------------------------
-function createSvgPath(drawing) {
+function createSvgPath(drawing, { selectable = false, connectionId = null } = {}) {
   const path = document.createElementNS(SVG_NAMESPACE, "path");
   path.setAttribute("d", drawing.path);
   path.setAttribute("class", "draw-path");
   path.setAttribute("stroke", drawing.color || state.color);
   path.setAttribute("stroke-width", drawing.width || 2);
   if (drawing.arrow) path.setAttribute("marker-end", "url(#arrow)");
+  if (selectable) {
+    const hitPath = path.cloneNode(false);
+    hitPath.setAttribute("class", "draw-hit-area");
+    hitPath.setAttribute("stroke", "transparent");
+    hitPath.setAttribute("stroke-width", Math.max(16, Number(drawing.width || 2) + 12));
+    hitPath.removeAttribute("marker-end");
+    hitPath.dataset.drawingId = drawing.id;
+    elements.connectionLayer.appendChild(hitPath);
+
+    path.classList.add("canvas-drawing");
+    path.dataset.drawingId = drawing.id;
+    path.classList.toggle("selected", drawing.id === selectedDrawingId);
+  }
+  if (connectionId) {
+    const hitPath = path.cloneNode(false);
+    hitPath.setAttribute("class", "connection-hit-area");
+    hitPath.setAttribute("stroke", "transparent");
+    hitPath.setAttribute("stroke-width", "16");
+    hitPath.removeAttribute("marker-end");
+    hitPath.dataset.connectionId = connectionId;
+    elements.connectionLayer.appendChild(hitPath);
+    path.classList.add("canvas-connection");
+    path.dataset.connectionId = connectionId;
+    path.classList.toggle("selected", connectionId === selectedConnectionId);
+  }
   elements.connectionLayer.appendChild(path);
+  return path;
 }
 
 function renderConnection(connection) {
+  connection.id = connection.id || createId();
   const start = getNodeById(connection.from);
   const end = getNodeById(connection.to);
   if (!start || !end) return;
@@ -485,13 +568,13 @@ function renderConnection(connection) {
     color: connection.color || "#6458d6",
     width: 2,
     arrow: true,
-  });
+  }, { connectionId: connection.id });
 }
 
 // DOM rendering -------------------------------------------------------------
 function renderSvgLayer() {
   queryAll(":scope > path", elements.connectionLayer).forEach((path) => path.remove());
-  state.drawings.forEach(createSvgPath);
+  state.drawings.forEach((drawing) => createSvgPath(drawing, { selectable: true }));
   state.connections.forEach(renderConnection);
 }
 
@@ -548,6 +631,10 @@ function renderCanvas() {
       image.alt = node.alt || "Canvas picture";
       image.draggable = false;
       nodeElement.appendChild(image);
+      const caption = document.createElement("div");
+      caption.className = "content image-caption";
+      caption.textContent = node.caption || "";
+      nodeElement.appendChild(caption);
     } else {
       nodeElement.innerHTML = `<div class="content">${escapeHtml(node.text)}</div>`;
     }
@@ -611,12 +698,87 @@ function beginDrawing(kind, point) {
   };
 }
 
+function eraseAtPoint(clientX, clientY) {
+  if (interaction?.kind !== "erase") return false;
+  const target = document.elementFromPoint(clientX, clientY);
+  const drawingElement = target?.closest?.("[data-drawing-id]");
+  const connectionElement = target?.closest?.("[data-connection-id]");
+  const nodeElement = target?.closest?.(".node");
+
+  if (drawingElement) {
+    const drawingId = drawingElement.dataset.drawingId;
+    if (!state.drawings.some((drawing) => drawing.id === drawingId)) return false;
+    if (!interaction.committed) {
+      commitHistorySnapshot(interaction.before);
+      interaction.committed = true;
+    }
+    state.drawings = state.drawings.filter((drawing) => drawing.id !== drawingId);
+  } else if (connectionElement) {
+    const connectionId = connectionElement.dataset.connectionId;
+    if (!state.connections.some((connection) => connection.id === connectionId)) return false;
+    if (!interaction.committed) {
+      commitHistorySnapshot(interaction.before);
+      interaction.committed = true;
+    }
+    state.connections = state.connections.filter((connection) => connection.id !== connectionId);
+  } else if (nodeElement) {
+    const node = getNodeById(nodeElement.dataset.id);
+    if (!node) return false;
+    if (node.locked) {
+      if (!interaction.lockNoticeShown) showToast("Unlock this object before erasing it");
+      interaction.lockNoticeShown = true;
+      return false;
+    }
+    if (!interaction.committed) {
+      commitHistorySnapshot(interaction.before);
+      interaction.committed = true;
+    }
+    state.nodes = state.nodes.filter((item) => item.id !== node.id);
+    state.connections = state.connections.filter((connection) => (
+      connection.from !== node.id && connection.to !== node.id
+    ));
+  } else {
+    return false;
+  }
+
+  interaction.changed = true;
+  clearSelection();
+  renderCanvas();
+  return true;
+}
+
+function beginErasing(event) {
+  interaction = {
+    kind: "erase",
+    before: serializeCanvas(),
+    committed: false,
+    changed: false,
+    lockNoticeShown: false,
+  };
+  eraseAtPoint(event.clientX, event.clientY);
+}
+
 function handlePointerDown(event) {
   if (event.button !== 0) return;
+  if (event.target.closest(".selection-actions, .canvas-controls")) return;
 
   // Keep template buttons clickable, but let every other first board touch
   // dismiss the welcome and continue as the intended canvas interaction.
   if (!event.target.closest("#emptyState [data-template]")) dismissWelcome();
+
+  const drawingPath = event.target.closest?.("[data-drawing-id]");
+  const connectionPath = event.target.closest?.("[data-connection-id]");
+  const tapSelectTools = ["select", "note", "rect", "ellipse", "diamond", "text", "task", "frame"];
+  if (drawingPath && tapSelectTools.includes(state.tool)) {
+    setTool("select");
+    selectDrawing(drawingPath.dataset.drawingId);
+    return;
+  }
+  if (connectionPath && tapSelectTools.includes(state.tool)) {
+    setTool("select");
+    selectConnection(connectionPath.dataset.connectionId);
+    return;
+  }
 
   const nodeElement = event.target.closest(".node");
   const worldPoint = screenToWorld(event.clientX, event.clientY);
@@ -627,7 +789,13 @@ function handlePointerDown(event) {
     return;
   }
 
-  if (nodeElement && state.tool === "select") {
+  if (state.tool === "eraser") {
+    beginErasing(event);
+    return;
+  }
+
+  if (nodeElement && !["draw", "line", "connector"].includes(state.tool)) {
+    setTool("select");
     const node = getNodeById(nodeElement.dataset.id);
     if (node.locked) {
       selectNode(node.id);
@@ -677,6 +845,8 @@ function handleConnectorClick(nodeId) {
     takeSnapshot();
     state.connections.push({ from: interaction.from, to: nodeId, color: state.color });
     interaction = null;
+    clearSelection();
+    elements.inspectorTitle.textContent = "Canvas";
     setTool("select");
     renderCanvas();
     showToast("Objects connected");
@@ -691,6 +861,11 @@ function handleConnectorClick(nodeId) {
 function handlePointerMove(event) {
   if (!interaction) return;
 
+  if (interaction.kind === "erase") {
+    eraseAtPoint(event.clientX, event.clientY);
+    return;
+  }
+
   if (interaction.kind === "pan") {
     state.panX = interaction.startPanX + event.clientX - interaction.startClientX;
     state.panY = interaction.startPanY + event.clientY - interaction.startClientY;
@@ -701,7 +876,7 @@ function handlePointerMove(event) {
   if (interaction.kind === "move") {
     if (!interaction.moved) {
       const distance = Math.hypot(event.clientX - interaction.startClientX, event.clientY - interaction.startClientY);
-      if (distance < 2) return;
+      if (distance < 6) return;
       interaction.moved = true;
       commitHistorySnapshot(interaction.before);
     }
@@ -727,7 +902,14 @@ function handlePointerMove(event) {
   if (interaction.kind === "draw" || interaction.kind === "line") {
     const worldPoint = screenToWorld(event.clientX, event.clientY);
     if (interaction.kind === "draw") {
-      interaction.points.push([worldPoint.x, worldPoint.y]);
+      const pointerEvents = event.getCoalescedEvents ? event.getCoalescedEvents() : [event];
+      pointerEvents.forEach((pointerEvent) => {
+        const point = screenToWorld(pointerEvent.clientX, pointerEvent.clientY);
+        const previous = interaction.points[interaction.points.length - 1];
+        if (!previous || Math.hypot(point.x - previous[0], point.y - previous[1]) >= 0.75) {
+          interaction.points.push([point.x, point.y]);
+        }
+      });
     } else {
       interaction.points[1] = [worldPoint.x, worldPoint.y];
     }
@@ -748,25 +930,31 @@ function pointsToPath(points) {
 
 function pointsToSmoothPath(points) {
   if (points.length < 3) return pointsToPath(points);
-  const commands = ["M" + points[0][0] + " " + points[0][1]];
+  const commands = [`M${points[0][0]} ${points[0][1]}`];
 
-  for (let index = 1; index < points.length - 1; index += 1) {
-    const current = points[index];
-    const next = points[index + 1];
-    const midpointX = (current[0] + next[0]) / 2;
-    const midpointY = (current[1] + next[1]) / 2;
-    commands.push("Q" + current[0] + " " + current[1] + " " + midpointX + " " + midpointY);
+  // Catmull-Rom-to-Bezier conversion keeps the marker fluid without making
+  // the finished stroke drift away from the user's pointer samples.
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const p0 = points[Math.max(0, index - 1)];
+    const p1 = points[index];
+    const p2 = points[index + 1];
+    const p3 = points[Math.min(points.length - 1, index + 2)];
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+    commands.push(`C${c1x} ${c1y} ${c2x} ${c2y} ${p2[0]} ${p2[1]}`);
   }
-
-  const last = points[points.length - 1];
-  commands.push("L" + last[0] + " " + last[1]);
   return commands.join(" ");
 }
 function handlePointerUp() {
+  if (interaction?.kind === "erase" && interaction.changed) showToast("Erased from canvas");
+
   if (interaction?.kind === "draw" || interaction?.kind === "line") {
     if (interaction.points.length > 1) {
       commitHistorySnapshot(interaction.before);
       state.drawings.push({
+        id: createId(),
         path: interaction.kind === "draw" ? pointsToSmoothPath(interaction.points) : pointsToPath(interaction.points),
         color: interaction.color,
         width: interaction.width,
@@ -847,7 +1035,6 @@ function editSelectedNode() {
   if (!selected) return;
   const node = getNodeById(selected.dataset.id);
   if (node.locked) return showToast("Unlock this object to edit it");
-  if (node.type === "image") return openImagePicker(node.id);
   beginNodeEditing(node);
 }
 
@@ -1159,6 +1346,7 @@ function applyLoadedBoard(board) {
   state.nodes = board.nodes || [];
   state.drawings = board.drawings || [];
   state.connections = board.connections || [];
+  state.drawings.forEach((drawing) => { drawing.id = drawing.id || createId(); });
 
   // Migrate boards created by the original prototype.
   state.nodes.forEach((node) => {
@@ -1166,6 +1354,7 @@ function applyLoadedBoard(board) {
     node.height = node.height || node.h;
     node.fontFamily = node.fontFamily || "DM Sans";
     node.fontSize = node.fontSize || (node.type === "text" ? 25 : 14);
+    if (node.type === "image") node.caption = node.caption || "";
   });
 
   if (board.title || board.boardTitle) {
@@ -1176,54 +1365,57 @@ function applyLoadedBoard(board) {
   updateWorldTransform();
 }
 
+function getLocalBoardIndex() {
+  try {
+    const index = JSON.parse(localStorage.getItem(BOARD_INDEX_KEY) || "[]");
+    return Array.isArray(index) ? index : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function updateLocalBoardIndex(board) {
+  const index = getLocalBoardIndex().filter((item) => item.id !== currentBoardId);
+  index.unshift({
+    id: currentBoardId,
+    title: board.title || "Untitled canvas",
+    updatedAt: board.updatedAt,
+    objectCount: board.nodes.length + board.drawings.length,
+  });
+  localStorage.setItem(BOARD_INDEX_KEY, JSON.stringify(index));
+}
+
 function loadLocalBoard() {
   try {
-    const savedBoard = JSON.parse(localStorage.getItem(STORAGE_KEY + ":" + currentBoardId) || localStorage.getItem(STORAGE_KEY));
+    const raw = localStorage.getItem(STORAGE_KEY + ":" + currentBoardId)
+      || (currentBoardId === "default" ? localStorage.getItem(STORAGE_KEY) : null);
+    const savedBoard = JSON.parse(raw || "null");
     if (savedBoard) applyLoadedBoard(savedBoard);
   } catch (error) {
     console.warn("Could not load the local canvas.", error);
+    showToast("This locally saved canvas could not be opened");
   }
 }
 
 async function saveBoard({ silent = false } = {}) {
-  const board = buildBoardPayload();
-
-  // Local storage keeps the app usable if the Python server is unavailable.
-  localStorage.setItem(STORAGE_KEY + ":" + currentBoardId, JSON.stringify(board));
-  localStorage.setItem("ideacanvas-current-board", currentBoardId);
-
+  const board = { ...buildBoardPayload(), updatedAt: new Date().toISOString() };
   try {
-    const response = await fetch("/api/boards/" + currentBoardId, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(board),
-    });
-
-    if (!response.ok) throw new Error(`Server returned ${response.status}`);
+    localStorage.setItem(STORAGE_KEY + ":" + currentBoardId, JSON.stringify(board));
+    localStorage.setItem("ideacanvas-current-board", currentBoardId);
+    updateLocalBoardIndex(board);
     markSaved();
-    if (!silent) showToast("Saved securely to the server");
+    if (!silent) showToast("Saved on this device");
   } catch (error) {
-    console.warn("Python backend unavailable; saved locally instead.", error);
-    markSaved();
-    if (!silent) showToast("Saved locally - server unavailable");
+    console.warn("Local save failed.", error);
+    elements.saveStatus.textContent = "Local storage is full";
+    if (!silent) showToast("Could not save: browser storage is full");
   }
 }
 
 async function loadBoard(boardId = currentBoardId) {
   currentBoardId = boardId;
   localStorage.setItem("ideacanvas-current-board", currentBoardId);
-  try {
-    const response = await fetch("/api/boards/" + currentBoardId);
-    if (response.status === 404) {
-      loadLocalBoard();
-      return;
-    }
-    if (!response.ok) throw new Error(`Server returned ${response.status}`);
-    applyLoadedBoard(await response.json());
-  } catch (error) {
-    console.warn("Python backend unavailable; loading local canvas.", error);
-    loadLocalBoard();
-  }
+  loadLocalBoard();
 }
 
 function resetForNewBoard(title) {
@@ -1295,15 +1487,18 @@ function renderFileList(files) {
 
 async function openFiles() {
   if (!elements.filesDialog.open) elements.filesDialog.showModal();
-  elements.fileList.innerHTML = '<p class="files-loading">Loading your saved canvases...</p>';
-  try {
-    const response = await fetch("/api/boards");
-    if (!response.ok) throw new Error("Unable to load files");
-    renderFileList((await response.json()).boards);
-  } catch (error) {
-    const localBoard = JSON.parse(localStorage.getItem(STORAGE_KEY + ":" + currentBoardId) || "null");
-    renderFileList(localBoard ? [{ id: currentBoardId, title: localBoard.title || "Current canvas", objectCount: localBoard.nodes.length, updatedAt: new Date() }] : []);
+  const files = getLocalBoardIndex();
+  const currentRaw = localStorage.getItem(STORAGE_KEY + ":" + currentBoardId);
+  if (!files.length && currentRaw) {
+    const board = JSON.parse(currentRaw);
+    files.push({
+      id: currentBoardId,
+      title: board.title || "Current canvas",
+      objectCount: (board.nodes?.length || 0) + (board.drawings?.length || 0),
+      updatedAt: board.updatedAt || new Date().toISOString(),
+    });
   }
+  renderFileList(files);
 }
 
 async function openFile(boardId) {
@@ -1318,20 +1513,17 @@ async function deleteFile(boardId) {
   if (boardId === currentBoardId) return showToast("Open another canvas before deleting this one");
   const confirmed = await openActionDialog({
     title: "Delete this canvas?",
-    message: "This saved canvas will be permanently removed.",
+    message: "This canvas will be removed from this browser.",
     confirmLabel: "Delete canvas",
     danger: true,
   });
   if (!confirmed) return;
-  try {
-    const response = await fetch("/api/boards/" + boardId, { method: "DELETE" });
-    if (!response.ok && response.status !== 404) throw new Error("Delete failed");
-  } catch (error) {
-    console.warn("Server delete unavailable; removing the local copy.", error);
-  }
   localStorage.removeItem(STORAGE_KEY + ":" + boardId);
+  localStorage.setItem(BOARD_INDEX_KEY, JSON.stringify(
+    getLocalBoardIndex().filter((board) => board.id !== boardId),
+  ));
   await openFiles();
-  showToast("Canvas deleted");
+  showToast("Canvas deleted from this device");
 }
 function exportFile(blob, extension) {
   const title = document.querySelector("#boardTitle").textContent;
@@ -1362,7 +1554,7 @@ function getExportBounds() {
     bounds.bottom = Math.max(bounds.bottom, node.y + node.height);
   });
   state.drawings.forEach((drawing) => {
-    const values = (drawing.path.match(/-?d+(?:.d+)?/g) || []).map(Number);
+    const values = (drawing.path.match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
     for (let index = 0; index < values.length - 1; index += 2) {
       bounds.left = Math.min(bounds.left, values[index]);
       bounds.top = Math.min(bounds.top, values[index + 1]);
@@ -1407,6 +1599,12 @@ function buildExportSvg() {
     const text = escapeHtml(node.text).replace(/\s+/g, " ");
     if (node.type === "image") {
       parts.push('<image href="' + node.src + '" x="' + node.x + '" y="' + node.y + '" width="' + node.width + '" height="' + node.height + '" preserveAspectRatio="xMidYMid meet"/>');
+      if (node.caption) {
+        const caption = escapeHtml(node.caption).replace(/\s+/g, " ");
+        const captionSize = node.fontSize || 14;
+        parts.push('<rect x="' + (node.x + 10) + '" y="' + (node.y + node.height - captionSize - 26) + '" width="' + (node.width - 20) + '" height="' + (captionSize + 18) + '" rx="8" fill="#0f1119" fill-opacity=".72"/>');
+        parts.push('<text x="' + (node.x + 20) + '" y="' + (node.y + node.height - 17) + '" fill="#fff" font-size="' + captionSize + '" font-family="' + (node.fontFamily || "DM Sans") + '">' + caption + '</text>');
+      }
       return;
     }
     if (node.type === "ellipse") {
@@ -1502,6 +1700,26 @@ async function renameBoard() {
 }
 
 // Input events --------------------------------------------------------------
+function selectNextCanvasItem(reverse = false) {
+  const items = [
+    ...state.nodes.map((node) => ({ kind: "node", id: node.id })),
+    ...state.drawings.map((drawing) => ({ kind: "drawing", id: drawing.id })),
+    ...state.connections.map((connection) => ({ kind: "connection", id: connection.id })),
+  ];
+  if (!items.length) return;
+  const selectedNode = getSelectedNodeElement();
+  const currentId = selectedNode?.dataset.id || selectedDrawingId || selectedConnectionId;
+  const currentIndex = items.findIndex((item) => item.id === currentId);
+  const direction = reverse ? -1 : 1;
+  const nextIndex = currentIndex < 0
+    ? (reverse ? items.length - 1 : 0)
+    : (currentIndex + direction + items.length) % items.length;
+  const next = items[nextIndex];
+  if (next.kind === "node") selectNode(next.id);
+  else if (next.kind === "drawing") selectDrawing(next.id);
+  else selectConnection(next.id);
+}
+
 function handleKeyDown(event) {
   const isFormField = /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName);
   if (event.target.isContentEditable) {
@@ -1530,6 +1748,10 @@ function handleKeyDown(event) {
     event.preventDefault();
     event.shiftKey ? redo() : undo();
   }
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y") {
+    event.preventDefault();
+    redo();
+  }
 
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c") {
     event.preventDefault();
@@ -1555,6 +1777,29 @@ function handleKeyDown(event) {
     saveBoard();
   }
 
+  if (event.key === "Tab") {
+    event.preventDefault();
+    selectNextCanvasItem(event.shiftKey);
+  }
+
+  if (event.key === "Enter" && getSelectedNodeElement()) {
+    event.preventDefault();
+    editSelectedNode();
+  }
+
+  if (["+", "="].includes(event.key)) {
+    event.preventDefault();
+    zoomFromCanvasCenter(0.1);
+  }
+  if (event.key === "-") {
+    event.preventDefault();
+    zoomFromCanvasCenter(-0.1);
+  }
+  if (event.key === "0") {
+    event.preventDefault();
+    centerContent();
+  }
+
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
     const selected = getSelectedNodeElement();
     const node = selected && getNodeById(selected.dataset.id);
@@ -1571,7 +1816,10 @@ function handleKeyDown(event) {
     }
   }
 
-  if (event.key === "Delete" || event.key === "Backspace") deleteSelectedNode();
+  if (event.key === "Delete" || event.key === "Backspace") {
+    event.preventDefault();
+    deleteSelectedNode();
+  }
 
   if (event.key === "Escape") {
     document.body.classList.remove("focus-mode");
@@ -1579,6 +1827,8 @@ function handleKeyDown(event) {
     elements.inspector.classList.remove("mobile-open");
     document.querySelector("#mobileInspectorButton").setAttribute("aria-expanded", "false");
     interaction = null;
+    clearSelection();
+    elements.inspectorTitle.textContent = "Canvas";
     setTool("select");
     renderCanvas();
   }
@@ -1608,6 +1858,7 @@ function bindInterfaceEvents() {
     button.addEventListener("click", () => {
       state.color = button.dataset.color;
       queryAll(".color-swatch").forEach((swatch) => swatch.classList.toggle("active", swatch === button));
+      document.querySelector(".custom-color").classList.remove("active");
       applyColorToSelection(state.color);
     });
   });
@@ -1616,6 +1867,7 @@ function bindInterfaceEvents() {
   document.querySelector("#customColor").addEventListener("input", (event) => {
     state.color = event.target.value;
     queryAll(".color-swatch").forEach((swatch) => swatch.classList.remove("active"));
+    document.querySelector(".custom-color").classList.add("active");
     applyColorToSelection(state.color);
   });
 
@@ -1683,8 +1935,6 @@ function bindInterfaceEvents() {
   document.querySelector("#editButton").addEventListener("click", editSelectedNode);
   document.querySelector("#duplicateButton").addEventListener("click", duplicateSelectedNode);
   document.querySelector("#lockButton").addEventListener("click", toggleSelectedLock);
-  document.querySelector("#sendBackButton").addEventListener("click", () => moveSelectedLayer(-1));
-  document.querySelector("#bringFrontButton").addEventListener("click", () => moveSelectedLayer(1));
   document.querySelector("#deleteButton").addEventListener("click", deleteSelectedNode);
   document.querySelector("#centerContentButton").addEventListener("click", centerContent);
   document.querySelector("#clearCanvasButton").addEventListener("click", clearCanvas);
@@ -1776,10 +2026,26 @@ function bindInterfaceEvents() {
 
 function applyColorToSelection(color) {
   const selectedElement = getSelectedNodeElement();
-  if (!selectedElement) return;
+  if (!selectedElement && !selectedDrawingId && !selectedConnectionId) return;
 
-  const node = getNodeById(selectedElement.dataset.id);
   takeSnapshot();
+  if (selectedDrawingId) {
+    const drawing = state.drawings.find((item) => item.id === selectedDrawingId);
+    if (!drawing) return;
+    drawing.color = color;
+    renderSvgLayer();
+    selectDrawing(drawing.id);
+    return;
+  }
+  if (selectedConnectionId) {
+    const connection = state.connections.find((item) => item.id === selectedConnectionId);
+    if (!connection) return;
+    connection.color = color;
+    renderSvgLayer();
+    selectConnection(connection.id);
+    return;
+  }
+  const node = getNodeById(selectedElement.dataset.id);
   node.color = color;
   renderCanvas();
   selectNode(node.id);
@@ -1799,15 +2065,16 @@ function handleNodeInput(event) {
   if (!event.target.classList.contains("content")) return;
   const nodeElement = event.target.closest(".node");
   const node = getNodeById(nodeElement.dataset.id);
-  node.text = event.target.innerText;
+  if (node.type === "image") node.caption = event.target.innerText;
+  else node.text = event.target.innerText;
   const growableTypes = ["note", "rect", "task", "text"];
 
   if (growableTypes.includes(node.type)) {
     requestAnimationFrame(() => {
-      const requiredHeight = Math.min(600, Math.max(node.height, event.target.scrollHeight + 4));
-      if (requiredHeight > node.height + 1) {
-        node.height = requiredHeight;
-        nodeElement.style.height = requiredHeight + "px";
+      const overflow = event.target.scrollHeight - event.target.clientHeight;
+      if (overflow > 1) {
+        node.height = Math.min(600, node.height + overflow);
+        nodeElement.style.height = node.height + "px";
         renderSvgLayer();
       }
     });
@@ -1818,7 +2085,8 @@ function handleNodeInput(event) {
 function handleNodeFocusOut(event) {
   if (!event.target.classList.contains("content")) return;
   const node = getNodeById(event.target.closest(".node").dataset.id);
-  node.text = event.target.innerText;
+  if (node.type === "image") node.caption = event.target.innerText;
+  else node.text = event.target.innerText;
   event.target.contentEditable = "false";
   markUnsaved();
 }

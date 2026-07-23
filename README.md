@@ -1,41 +1,36 @@
 # IdeaCanvas
 
-A professional visual-thinking workspace with freehand drawing, shapes,
-connectors, templates, colors, zoom, history, server persistence, local fallback,
-and JSON export.
+A local-first visual-thinking workspace with freehand drawing, shapes, text,
+picture captions, connectors, templates, colors, zoom, history, and JSON export.
 
 ## Run locally
 
+IdeaCanvas is a static website with no backend and no database. Open `index.html`
+directly in a modern browser, or use any static-file preview extension. If your
+browser restricts local files, run a simple static-file server such as:
+
 ```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-python server.py
+python -m http.server 4173
 ```
 
-Open `http://127.0.0.1:4173`.
+Then open `http://127.0.0.1:4173`.
+
+## Storage and privacy
+
+Canvases and their file-library metadata are stored only in the browser's
+`localStorage`. Nothing is sent to a server. Browser storage belongs to the
+current browser profile and site origin, so export a JSON backup before clearing
+site data or switching browsers.
 
 ## Features
 
-- Professional infinite canvas with drawing, shapes, text, notes, and connectors
+- Infinite canvas with smooth marker drawing, shapes, text, notes, and connectors
+- Sticky notes that grow only when their writing area is full
+- Picture upload with editable on-picture captions
+- Broad font picker with web fonts and common system font families
+- Selectable marker strokes and reliable toolbar/keyboard deletion
+- Keyboard tools, editing, object cycling, nudging, zoom, history, and search
 - Mind map, process flow, brainstorming, roadmap, Kanban, and wireframe layouts
-- Multiple named canvas files with create, open, recent metadata, and delete actions
-- Dedicated task cards and section frames for structured planning
-- Persistent light/dark themes with responsive, accessible controls
-- Picture nodes with PNG, JPG, and WebP upload, replacement, movement, locking, and export
-- Per-object typography with five font families and adjustable writing sizes
-- Canvas-wide text search with focus navigation
-- Duplicate, delete, clear-with-undo, and center-content actions
-- Keyboard shortcuts, zoom, panning, grid controls, and responsive layout
-- Debounced server autosave with local-storage fallback
-- JSON import/export, SVG vector export, high-resolution PNG export, and validated Python persistence API
-
-## Backend API
-
-- `GET /api/health` checks the service.
-- `GET /api/boards` lists saved canvas files.
-- `GET /api/boards/<board_id>` loads a saved canvas.
-- `PUT /api/boards/<board_id>` validates and saves a canvas.
-- `DELETE /api/boards/<board_id>` deletes a canvas.
-
-Board files are stored under `data/boards/` and ignored by Git.
+- Multiple named canvases stored locally in the browser
+- Light/dark themes with visible selection and color outlines
+- JSON import/export, SVG vector export, and high-resolution PNG export

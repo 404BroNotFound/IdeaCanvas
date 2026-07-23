@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#15122b">
   <title>IdeaCanvas - Visual Thinking Studio</title>
-  <link rel="icon" href="/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Lora:wght@400;500;600;700&family=Manrope:wght@600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
   <div class="app-shell">
     <aside class="navigation" aria-label="Main navigation">
       <a class="brand-mark" href="#" aria-label="IdeaCanvas home">
-        <img src="/logo.svg" alt="" width="40" height="40">
+        <img src="logo.svg" alt="" width="40" height="40">
         <span class="brand-copy"><b>IdeaCanvas</b><small>Visual workspace</small></span>
       </a>
       <button class="sidebar-toggle" id="sidebarToggleButton" aria-label="Collapse sidebar" aria-pressed="false">&#8249;</button>
@@ -25,6 +25,7 @@
         <button class="nav-tool" data-tool="hand" data-label="Move canvas"><svg viewBox="0 0 24 24"><path d="M7 11V7a2 2 0 0 1 4 0v3-5a2 2 0 0 1 4 0v5-3a2 2 0 0 1 4 0v7c0 4-3 7-7 7h-1c-3 0-5-2-6-4l-2-4a2 2 0 0 1 4-2Z"/></svg></button>
         <span class="nav-section-label">Create</span>
         <button class="nav-tool" data-tool="draw" data-label="Draw"><svg viewBox="0 0 24 24"><path d="m4 20 4-1L19 8l-3-3L5 16z"/><path d="m14 7 3 3"/></svg></button>
+        <button class="nav-tool" data-tool="eraser" data-label="Eraser"><svg viewBox="0 0 24 24"><path d="m4 15 9-10 7 7-7 8H8z"/><path d="m9 10 7 7M13 20h8"/></svg></button>
         <button class="nav-tool" data-tool="line" data-label="Arrow"><svg viewBox="0 0 24 24"><path d="M5 19 19 5M12 5h7v7"/></svg></button>
         <button class="nav-tool" data-tool="rect" data-label="Rectangle"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/></svg></button>
         <button class="nav-tool" data-tool="ellipse" data-label="Ellipse"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8" ry="7"/></svg></button>
@@ -90,8 +91,8 @@
           <button id="editButton" title="Edit selected object">Edit</button>
           <button id="duplicateButton" title="Duplicate selected object">Duplicate</button>
           <button id="lockButton" title="Lock selected object">Lock</button>
-          <button id="sendBackButton" title="Send selected object backward">Back</button>
-          <button id="bringFrontButton" title="Bring selected object forward">Front</button>
+
+
           <span></span>
           <button id="deleteButton" class="danger-action" title="Delete selected object">Delete</button>
         </div>
@@ -125,6 +126,32 @@
           <option value="Space Grotesk">Space Grotesk</option>
           <option value="Lora">Lora</option>
           <option value="IBM Plex Mono">IBM Plex Mono</option>
+          <optgroup label="Sans serif">
+            <option value="Arial">Arial</option>
+            <option value="Arial Black">Arial Black</option>
+            <option value="Calibri">Calibri</option>
+            <option value="Candara">Candara</option>
+            <option value="Century Gothic">Century Gothic</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Tahoma">Tahoma</option>
+            <option value="Trebuchet MS">Trebuchet MS</option>
+            <option value="Verdana">Verdana</option>
+          </optgroup>
+          <optgroup label="Serif">
+            <option value="Baskerville">Baskerville</option>
+            <option value="Book Antiqua">Book Antiqua</option>
+            <option value="Cambria">Cambria</option>
+            <option value="Garamond">Garamond</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Palatino Linotype">Palatino Linotype</option>
+            <option value="Times New Roman">Times New Roman</option>
+          </optgroup>
+          <optgroup label="Monospace and display">
+            <option value="Consolas">Consolas</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Impact">Impact</option>
+            <option value="Lucida Console">Lucida Console</option>
+          </optgroup>
         </select>
         <label class="field-label" for="fontSizeRange">Writing size</label>
         <input id="fontSizeRange" type="range" min="10" max="36" step="1" value="14">
@@ -176,7 +203,7 @@
 
   <dialog class="shortcut-dialog" id="shortcutDialog">
     <div class="dialog-heading"><div><span>WORK FASTER</span><h2>Keyboard shortcuts</h2></div><button id="closeShortcuts">&times;</button></div>
-    <div class="shortcut-grid"><span>Select <kbd>V</kbd></span><span>Pan <kbd>H</kbd></span><span>Pencil <kbd>P</kbd></span><span>Arrow <kbd>L</kbd></span><span>Rectangle <kbd>R</kbd></span><span>Note <kbd>N</kbd></span><span>Text <kbd>T</kbd></span><span>Delete <kbd>Del</kbd></span><span>Find <kbd>Ctrl F</kbd></span><span>Duplicate <kbd>Ctrl D</kbd></span><span>Task <kbd>K</kbd></span><span>Section <kbd>F</kbd></span><span>Nudge <kbd>Arrows</kbd></span><span>Move 10px <kbd>Shift + Arrows</kbd></span><span>Copy <kbd>Ctrl C</kbd></span><span>Paste <kbd>Ctrl V</kbd></span></div>
+    <div class="shortcut-grid"><span>Select <kbd>V</kbd></span><span>Pan <kbd>H</kbd></span><span>Pencil <kbd>P</kbd></span><span>Eraser <kbd>E</kbd></span><span>Arrow <kbd>L</kbd></span><span>Rectangle <kbd>R</kbd></span><span>Ellipse <kbd>O</kbd></span><span>Decision <kbd>G</kbd></span><span>Note <kbd>N</kbd></span><span>Text <kbd>T</kbd></span><span>Edit selection <kbd>Enter</kbd></span><span>Delete <kbd>Del</kbd></span><span>Find <kbd>Ctrl F</kbd></span><span>Duplicate <kbd>Ctrl D</kbd></span><span>Task <kbd>K</kbd></span><span>Section <kbd>F</kbd></span><span>Nudge <kbd>Arrows</kbd></span><span>Move 10px <kbd>Shift + Arrows</kbd></span><span>Copy <kbd>Ctrl C</kbd></span><span>Paste <kbd>Ctrl V</kbd></span><span>Zoom <kbd>+ / -</kbd></span><span>Fit view <kbd>0</kbd></span><span>Next object <kbd>Tab</kbd></span><span>Clear selection <kbd>Esc</kbd></span></div>
   </dialog>
   <dialog class="files-dialog" id="filesDialog">
     <div class="files-heading">
