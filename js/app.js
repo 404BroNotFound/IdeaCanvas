@@ -1363,6 +1363,7 @@ function openAccountDialog() {
   toggleButton.textContent = "Show";
   toggleButton.setAttribute("aria-label", "Show password");
   toggleButton.setAttribute("aria-pressed", "false");
+  document.querySelector("#resendConfirmationButton").hidden = true;
   document.querySelector("#accountDialog").showModal();
 }
 
@@ -1402,7 +1403,20 @@ async function signInToCloud(event) {
     updateAccountUI();
     showToast("Signed in — canvas synced");
   } catch (error) {
+    document.querySelector("#resendConfirmationButton").hidden = !/confirm/i.test(error.message || "");
     showToast(error.message || "Could not sign in");
+  }
+}
+
+async function resendConfirmationEmail() {
+  const emailInput = document.querySelector("#accountEmail");
+  if (!emailInput.reportValidity()) return;
+  try {
+    await cloud.resendConfirmation(emailInput.value.trim());
+    showToast("Confirmation email sent — check your inbox");
+    document.querySelector("#resendConfirmationButton").hidden = true;
+  } catch (error) {
+    showToast(error.message || "Could not resend confirmation email");
   }
 }
 
@@ -2038,6 +2052,7 @@ function bindInterfaceEvents() {
   document.querySelector("#createAccountButton").addEventListener("click", createCloudAccount);
   document.querySelector("#signOutButton").addEventListener("click", signOutOfCloud);
   document.querySelector("#togglePasswordButton").addEventListener("click", toggleAccountPassword);
+  document.querySelector("#resendConfirmationButton").addEventListener("click", resendConfirmationEmail);
   document.querySelector("#addImageButton").addEventListener("click", () => openImagePicker());
   document.querySelector("#inspectorImageButton").addEventListener("click", () => openImagePicker());
   elements.imageUploadInput.addEventListener("change", (event) => addImageFromFile(event.target.files[0]));

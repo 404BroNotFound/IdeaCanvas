@@ -61,6 +61,17 @@
     emit();
   }
 
+  async function resendConfirmation(email) {
+    if (!client) throw new Error("Cloud storage is not configured");
+    const canRedirect = /^https?:$/.test(global.location?.protocol || "");
+    const emailRedirectTo = canRedirect ? new URL(".", global.location.href).href : undefined;
+    const { error } = await client.auth.resend({
+      type: "signup",
+      email,
+      options: emailRedirectTo ? { emailRedirectTo } : undefined,
+    });
+    if (error) throw error;
+  }
   async function saveBoard(id, board) {
     if (!client || !user) return false;
     const { error } = await client.from("canvases").upsert({
@@ -112,6 +123,7 @@
     signIn,
     signUp,
     signOut,
+    resendConfirmation,
     saveBoard,
     loadBoard,
     listBoards,
