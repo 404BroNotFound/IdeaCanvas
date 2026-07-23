@@ -1673,18 +1673,6 @@ function toggleFocusMode() {
   showToast(enabled ? "Focus mode enabled — press Esc to exit" : "Focus mode disabled");
 }
 
-async function presentCanvas() {
-  document.body.classList.add("focus-mode");
-  try {
-    if (!document.documentElement.requestFullscreen) throw new Error("Fullscreen unavailable");
-    await document.documentElement.requestFullscreen();
-    showToast("Presentation mode started");
-  } catch (error) {
-    document.body.classList.remove("focus-mode");
-    showToast("Fullscreen is not supported in this browser");
-  }
-}
-
 async function renameBoard() {
   const titleButton = document.querySelector("#boardTitle");
   const newTitle = await openActionDialog({
@@ -1715,6 +1703,7 @@ function selectNextCanvasItem(reverse = false) {
     ? (reverse ? items.length - 1 : 0)
     : (currentIndex + direction + items.length) % items.length;
   const next = items[nextIndex];
+  setTool("select");
   if (next.kind === "node") selectNode(next.id);
   else if (next.kind === "drawing") selectDrawing(next.id);
   else selectConnection(next.id);
@@ -1803,7 +1792,16 @@ function handleKeyDown(event) {
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
     const selected = getSelectedNodeElement();
     const node = selected && getNodeById(selected.dataset.id);
-    if (node && !node.locked) {
+    const hasSelection = Boolean(node || selectedDrawingId || selectedConnectionId);
+    const reverseSelection = event.key === "ArrowUp" || event.key === "ArrowLeft";
+
+    if (!hasSelection || event.altKey || !node) {
+      event.preventDefault();
+      selectNextCanvasItem(reverseSelection);
+    } else if (node.locked) {
+      event.preventDefault();
+      showToast("This object is locked ? use Alt + Arrow to select another");
+    } else {
       event.preventDefault();
       takeSnapshot();
       const step = event.shiftKey ? 10 : 1;
@@ -1921,7 +1919,6 @@ function bindInterfaceEvents() {
   });
   document.querySelector("#snapGridButton").addEventListener("click", toggleSnapGrid);
   document.querySelector("#focusModeButton").addEventListener("click", toggleFocusMode);
-  document.querySelector("#presentButton").addEventListener("click", presentCanvas);
   document.querySelector("#boardTitle").addEventListener("click", renameBoard);
   document.querySelector("#gridButton").addEventListener("click", (event) => {
     const isOff = elements.viewport.classList.toggle("grid-off");
@@ -2012,13 +2009,6 @@ function bindInterfaceEvents() {
       if (event.target === dialog) dialog.close();
     });
   });
-  document.addEventListener("fullscreenchange", () => {
-    if (!document.fullscreenElement) {
-      document.body.classList.remove("focus-mode");
-      document.querySelector("#focusModeButton").setAttribute("aria-pressed", "false");
-    }
-  });
-
   elements.world.addEventListener("dblclick", handleNodeDoubleClick);
   elements.world.addEventListener("input", handleNodeInput);
   elements.world.addEventListener("focusout", handleNodeFocusOut);

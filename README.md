@@ -1,36 +1,86 @@
 # IdeaCanvas
 
-A local-first visual-thinking workspace with freehand drawing, shapes, text,
-picture captions, connectors, templates, colors, zoom, history, and JSON export.
-
-## Run locally
-
-IdeaCanvas is a static website with no backend and no database. Open `index.html`
-directly in a modern browser, or use any static-file preview extension. If your
-browser restricts local files, run a simple static-file server such as:
-
-```powershell
-python -m http.server 4173
-```
-
-Then open `http://127.0.0.1:4173`.
-
-## Storage and privacy
-
-Canvases and their file-library metadata are stored only in the browser's
-`localStorage`. Nothing is sent to a server. Browser storage belongs to the
-current browser profile and site origin, so export a JSON backup before clearing
-site data or switching browsers.
+IdeaCanvas is a local-first visual workspace for turning ideas into diagrams,
+notes, plans, and annotated images directly in the browser.
 
 ## Features
 
-- Infinite canvas with smooth marker drawing, shapes, text, notes, and connectors
-- Sticky notes that grow only when their writing area is full
-- Picture upload with editable on-picture captions
-- Broad font picker with web fonts and common system font families
-- Selectable marker strokes and reliable toolbar/keyboard deletion
-- Keyboard tools, editing, object cycling, nudging, zoom, history, and search
+- Infinite canvas with zooming, panning, grid controls, and focus mode
+- Sticky notes, text, tasks, frames, shapes, arrows, and connectors
+- Smooth freehand drawing with a click-and-drag eraser
+- Image uploads with text and drawing overlays
+- Automatic object, stroke, and connector selection
+- Keyboard navigation, movement, editing, deletion, undo, and redo
+- Light and dark themes with consistent selection feedback
 - Mind map, process flow, brainstorming, roadmap, Kanban, and wireframe layouts
-- Multiple named canvases stored locally in the browser
-- Light/dark themes with visible selection and color outlines
-- JSON import/export, SVG vector export, and high-resolution PNG export
+- JSON backups plus SVG and high-resolution PNG exports
+- Multiple canvases stored locally in the browser
+
+## Getting Started
+
+IdeaCanvas has no dependencies, build step, backend, or database.
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/404BroNotFound/IdeaCanvas.git
+   ```
+
+2. Open the project folder.
+3. Open `index.html` in a modern browser.
+
+You can also use a static preview extension such as Live Server.
+
+## Using the Canvas
+
+- Choose a creation tool from the sidebar and click the canvas.
+- Tap an existing object, stroke, or connector to select it.
+- Use the floating action bar or the Delete key to remove a selection.
+- Select a picture and choose **Write** to add text over it.
+- Choose the pencil or eraser and drag directly across the canvas.
+- Use **Snap** for grid alignment and **Focus** to hide surrounding panels.
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+| --- | --- |
+| Select | `V` |
+| Pan canvas | `H` or hold `Space` and drag |
+| Pencil | `P` |
+| Eraser | `E` |
+| Arrow | `L` |
+| Rectangle | `R` |
+| Ellipse | `O` |
+| Sticky note | `N` |
+| Text | `T` |
+| Edit selection | `Enter` |
+| Delete selection | `Delete` or `Backspace` |
+| Select or move objects | Arrow keys |
+| Move by 10 pixels | `Shift` + Arrow key |
+| Change selection | `Alt` + Arrow key |
+| Undo / redo | `Ctrl+Z` / `Ctrl+Shift+Z` |
+| Copy / paste | `Ctrl+C` / `Ctrl+V` |
+| Search canvas | `Ctrl+F` |
+| Save locally | `Ctrl+S` |
+
+## Local Storage
+
+Canvas files are saved in browser `localStorage`. No canvas content is uploaded
+to a server. Browser data can be removed when site data is cleared, so export a
+JSON backup for important canvases.
+
+## Project Structure
+
+```text
+IdeaCanvas/
+??? index.html   # Application interface
+??? styles.css   # Layout, themes, and responsive styling
+??? app.js       # Canvas tools, interactions, storage, and exports
+??? logo.svg     # IdeaCanvas logo
+??? README.md    # Project documentation
+```
+
+## Browser Support
+
+IdeaCanvas is designed for current versions of Chrome, Edge, Firefox, and
+Safari on desktop and touch devices.
