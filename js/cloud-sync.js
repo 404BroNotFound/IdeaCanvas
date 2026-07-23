@@ -39,7 +39,13 @@
 
   async function signUp(email, password) {
     if (!client) throw new Error("Cloud storage is not configured");
-    const { data, error } = await client.auth.signUp({ email, password });
+    const canRedirect = /^https?:$/.test(global.location?.protocol || "");
+    const emailRedirectTo = canRedirect ? new URL(".", global.location.href).href : undefined;
+    const { data, error } = await client.auth.signUp({
+      email,
+      password,
+      options: emailRedirectTo ? { emailRedirectTo } : undefined,
+    });
     if (error) throw error;
     const accountUser = data.user;
     user = data.session?.user || null;
