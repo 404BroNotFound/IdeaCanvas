@@ -1202,3 +1202,46 @@ body.dark-mode {
   background: #c4bdff;
   box-shadow: 0 0 0 4px rgba(169,159,255,.16), 0 0 9px rgba(169,159,255,.55);
 }
+
+/* UI and interaction refinement */
+:where(button, a, input, select, [contenteditable="true"]):focus-visible {
+  outline: 3px solid rgba(100,88,214,.3); outline-offset: 2px;
+}
+button:disabled { cursor: not-allowed; opacity: .45; }
+.workspace-header { border-bottom-color: rgba(61,52,111,.11); }
+.active-tool-status {
+  display: flex; height: 34px; gap: 7px; align-items: center; padding: 0 8px 0 9px;
+  border: 1px solid #dedaf6; border-radius: 9px; color: #5147ac; background: #f7f5ff; white-space: nowrap;
+}
+.header-center .active-tool-status svg {
+  width: 15px; height: 15px; fill: none; stroke: currentColor;
+  stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8;
+}
+.active-tool-status b { font-size: 10px; font-weight: 750; }
+.active-tool-status kbd {
+  min-width: 20px; padding: 2px 5px; border: 1px solid #d4cff1; border-radius: 5px;
+  color: #6a60bc; background: #fff; box-shadow: 0 1px 0 #c8c2e8;
+  font: 700 8px "DM Sans",sans-serif; text-align: center;
+}
+.nav-tool { isolation: isolate; }
+.nav-tool.active::before {
+  content: ""; position: absolute; left: -7px; width: 3px; height: 20px;
+  border-radius: 4px; background: #a99fff; box-shadow: 0 0 10px rgba(169,159,255,.62);
+}
+.selection-actions.visible { animation: selection-actions-in 170ms ease-out; }
+.selection-actions .danger-action { margin-left: 2px; font-weight: 750; }
+.selection-actions .danger-action::before { content: "×"; margin-right: 5px; font-size: 15px; line-height: 1; }
+.canvas-controls button, .selection-actions button, .header-actions button, .github-button {
+  transition: color 150ms ease, background 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+.canvas-controls button:active, .selection-actions button:active,
+.header-actions button:active, .github-button:active { transform: scale(.96); }
+.dark-mode .active-tool-status { color: #c9c2ff; border-color: #403966; background: #24203e; }
+.dark-mode .active-tool-status kbd {
+  color: #d5cfff; border-color: #504879; background: #19162c; box-shadow: 0 1px 0 #0f0d1c;
+}
+@keyframes selection-actions-in { from { opacity: 0; transform: translate(-50%, 8px) scale(.98); } }
+@media (max-width: 1240px) { .active-tool-status b { display: none; } }
+@media (max-width: 1080px) { .active-tool-status { display: none; } }
+@media (min-width: 981px) { .sidebar-compact .nav-tool.active::before { left: -10px; } }
+@media (max-width: 980px) { .nav-tool.active::before { display: none; } }

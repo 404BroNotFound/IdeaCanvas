@@ -58,6 +58,11 @@
           <button id="undoButton" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>&#8630;</button>
           <button id="redoButton" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled>&#8631;</button>
           <span></span>
+          <div class="active-tool-status" id="activeToolStatus" aria-live="polite">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 4 11 8-5 1-2 5z"/></svg>
+            <b id="activeToolName">Select</b>
+            <kbd id="activeToolKey">V</kbd>
+          </div>
           <button id="searchButton" class="search-trigger" title="Find on canvas"><span aria-hidden="true">&#9906;</span> Find <kbd>Ctrl F</kbd></button>
           <button id="gridButton" title="Toggle grid" aria-pressed="true">Grid</button>
         </div>

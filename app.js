@@ -349,7 +349,9 @@ function setTool(toolName) {
   if (toolName === "hand" && state.navigationLocked) setNavigationLocked(false, { silent: true });
 
   queryAll(".nav-tool[data-tool]").forEach((button) => {
-    button.classList.toggle("active", button.dataset.tool === toolName);
+    const isActive = button.dataset.tool === toolName;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
   });
 
   const cursors = {
@@ -395,6 +397,10 @@ function setTool(toolName) {
   elements.toolGuideIcon.textContent = guide[0];
   elements.toolGuideTitle.textContent = guide[1];
   elements.toolGuideText.textContent = guide[2];
+  const activeToolName = document.querySelector("#activeToolName");
+  const activeToolKey = document.querySelector("#activeToolKey");
+  if (activeToolName) activeToolName.textContent = guide[1].replace(" tool", "");
+  if (activeToolKey) activeToolKey.textContent = guide[0];
 }
 
 function clearSelection() {
@@ -1846,6 +1852,13 @@ function bindInterfaceEvents() {
   });
 
   queryAll(".nav-tool[data-tool]").forEach((button) => {
+    const shortcut = {
+      select: "V", hand: "H", draw: "P", eraser: "E", line: "L", connector: "C",
+      rect: "R", ellipse: "O", diamond: "G", note: "N", task: "K", frame: "F", text: "T",
+    }[button.dataset.tool];
+    const label = button.dataset.label || button.dataset.tool;
+    button.setAttribute("aria-label", shortcut ? `${label} tool (${shortcut})` : `${label} tool`);
+    button.title = shortcut ? `${label} (${shortcut})` : label;
     button.addEventListener("click", () => setTool(button.dataset.tool));
   });
 
