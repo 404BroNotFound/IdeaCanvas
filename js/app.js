@@ -2013,6 +2013,7 @@ function selectNextCanvasItem(reverse = false) {
 
 function handleKeyDown(event) {
   const isFormField = /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName);
+  const isInterfaceControl = event.target.closest?.("button, a, summary, [role='button']");
   if (event.target.isContentEditable) {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -2021,7 +2022,7 @@ function handleKeyDown(event) {
     }
     return;
   }
-  if (isFormField) return;
+  if (isFormField || isInterfaceControl) return;
 
   if (!["Tab", "Shift", "Control", "Alt", "Meta"].includes(event.key)) dismissWelcome();
 
@@ -2068,10 +2069,6 @@ function handleKeyDown(event) {
     saveBoard();
   }
 
-  if (event.key === "Tab") {
-    event.preventDefault();
-    selectNextCanvasItem(event.shiftKey);
-  }
 
   if (event.key === "Enter" && getSelectedNodeElement()) {
     event.preventDefault();
@@ -2102,7 +2099,7 @@ function handleKeyDown(event) {
       selectNextCanvasItem(reverseSelection);
     } else if (node.locked) {
       event.preventDefault();
-      showToast("This object is locked ? use Alt + Arrow to select another");
+      showToast("This object is locked -- use Alt + Arrow to select another");
     } else {
       event.preventDefault();
       takeSnapshot();
