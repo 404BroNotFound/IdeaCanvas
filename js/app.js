@@ -649,7 +649,10 @@ function renderCanvas() {
   state.nodes.forEach((node) => {
     const noteTextColor = node.type === "note" ? getReadableTextColor(node.color) : "inherit";
     const nodeElement = document.createElement("div");
-    nodeElement.className = `node ${node.type}${node.locked ? " locked" : ""}`;
+    const noteContrastClass = node.type === "note"
+      ? (noteTextColor === "#ffffff" ? " note-dark" : " note-light")
+      : "";
+    nodeElement.className = `node ${node.type}${noteContrastClass}${node.locked ? " locked" : ""}`;
     nodeElement.dataset.id = node.id;
     nodeElement.style.cssText = [
       `left:${node.x}px`,
