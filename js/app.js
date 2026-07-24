@@ -261,6 +261,19 @@ function escapeHtml(value) {
   })[character]);
 }
 
+function getReadableTextColor(background) {
+  const hex = String(background || "").replace("#", "");
+  const normalized = hex.length === 3
+    ? hex.split("").map((character) => character + character).join("")
+    : hex;
+  if (!/^[0-9a-f]{6}$/i.test(normalized)) return "#202630";
+  const red = parseInt(normalized.slice(0, 2), 16);
+  const green = parseInt(normalized.slice(2, 4), 16);
+  const blue = parseInt(normalized.slice(4, 6), 16);
+  const brightness = (red * 299 + green * 587 + blue * 114) / 1000;
+  return brightness >= 150 ? "#202630" : "#ffffff";
+}
+
 function screenToWorld(clientX, clientY) {
   const bounds = elements.viewport.getBoundingClientRect();
   return {
@@ -634,6 +647,7 @@ function renderCanvas() {
   renderSvgLayer();
 
   state.nodes.forEach((node) => {
+    const noteTextColor = node.type === "note" ? getReadableTextColor(node.color) : "inherit";
     const nodeElement = document.createElement("div");
     nodeElement.className = `node ${node.type}${node.locked ? " locked" : ""}`;
     nodeElement.dataset.id = node.id;
@@ -645,6 +659,8 @@ function renderCanvas() {
       `--node-color:${node.color}`,
       `--node-font:${node.fontFamily || "DM Sans"}`,
       `--node-font-size:${node.fontSize || (node.type === "text" ? 25 : 14)}px`,
+      `--node-text-color:${noteTextColor}`,
+      `--node-edit-bg:${noteTextColor === "#ffffff" ? "rgba(0,0,0,.22)" : "rgba(255,255,255,.52)"}`,
       node.type === "note" ? `background:${node.color}` : "",
     ].join(";");
     if (node.type === "image") {

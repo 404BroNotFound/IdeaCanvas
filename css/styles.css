@@ -1284,3 +1284,14 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .account-legal a { color: var(--subtle); }
 .account-legal a:hover { color: var(--violet); }
 .canvas-viewport[data-tool="select"] .node.selected .content { cursor: text; }
+.node.note .content {
+  color: var(--node-text-color, #202630);
+  caret-color: var(--node-text-color, #202630);
+  text-shadow: none;
+}
+.node.note .content[contenteditable="true"],
+.dark-mode .node.note .content[contenteditable="true"] {
+  color: var(--node-text-color, #202630);
+  caret-color: var(--node-text-color, #202630);
+  background: var(--node-edit-bg, rgba(255,255,255,.52));
+}
