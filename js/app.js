@@ -65,6 +65,7 @@ const state = {
   panX: 0,
   panY: 0,
   color: "#202630",
+  textColor: null,
   strokeWidth: 2,
   snapToGrid: false,
   navigationLocked: true,
@@ -118,6 +119,9 @@ function updateTypographyControls(node = null) {
   fontSelect.value = node?.fontFamily || state.fontFamily;
   sizeRange.value = node?.fontSize || state.fontSize;
   document.querySelector("#fontSizeValue").textContent = sizeRange.value + " px";
+  const textColor = node?.textColor || state.textColor;
+  document.querySelector("#textColorPicker").value = textColor || "#202630";
+  document.querySelector("#autoTextColorButton").setAttribute("aria-pressed", String(!textColor));
 }
 
 function applyTypography({ fontFamily = state.fontFamily, fontSize = state.fontSize, snapshot = true } = {}) {
@@ -500,7 +504,7 @@ function addNode(type, x, y, text, width, height, color) {
     ellipse: { width: 172, height: 104, text: "New thought" },
     diamond: { width: 124, height: 124, text: "Decision" },
     text: { width: 220, height: 44, text: "Start typing" },
-    task: { width: 230, height: 62, text: "[ ] New task" },
+    task: { width: 230, height: 62, text: "New task" },
     frame: { width: 430, height: 280, text: "Section" },
   };
   const preset = presets[type];
@@ -514,12 +518,26 @@ function addNode(type, x, y, text, width, height, color) {
     height: height || preset.height,
     text: text || preset.text,
     color: color || (type === "note" ? NOTE_COLORS[state.nodes.length % NOTE_COLORS.length] : state.color),
+    textColor: state.textColor,
     fontFamily: state.fontFamily,
     fontSize: type === "text" ? Math.max(24, state.fontSize) : state.fontSize,
   };
 
   state.nodes.push(node);
   return node;
+}
+
+function completeTask(nodeId) {
+  const node = getNodeById(nodeId);
+  if (!node || node.type !== "task") return;
+  if (node.locked) return showToast("Unlock this task before completing it");
+  takeSnapshot();
+  state.nodes = state.nodes.filter((item) => item.id !== nodeId);
+  state.connections = state.connections.filter((connection) => connection.from !== nodeId && connection.to !== nodeId);
+  clearSelection();
+  renderCanvas();
+  markUnsaved();
+  showToast("Task completed and removed — use Undo to restore it");
 }
 
 function deleteSelectedNode() {
@@ -647,12 +665,14 @@ function renderCanvas() {
   renderSvgLayer();
 
   state.nodes.forEach((node) => {
-    const noteTextColor = node.type === "note" ? getReadableTextColor(node.color) : "inherit";
+    const automaticTextColor = node.type === "note" ? getReadableTextColor(node.color) : (node.type === "text" ? node.color : "#202630");
+    const nodeTextColor = node.textColor || automaticTextColor;
     const nodeElement = document.createElement("div");
     const noteContrastClass = node.type === "note"
-      ? (noteTextColor === "#ffffff" ? " note-dark" : " note-light")
+      ? (automaticTextColor === "#ffffff" ? " note-dark" : " note-light")
       : "";
-    nodeElement.className = `node ${node.type}${noteContrastClass}${node.locked ? " locked" : ""}`;
+    const customTextClass = node.textColor ? " custom-text-color" : "";
+    nodeElement.className = `node ${node.type}${noteContrastClass}${customTextClass}${node.locked ? " locked" : ""}`;
     nodeElement.dataset.id = node.id;
     nodeElement.style.cssText = [
       `left:${node.x}px`,
@@ -662,8 +682,8 @@ function renderCanvas() {
       `--node-color:${node.color}`,
       `--node-font:${node.fontFamily || "DM Sans"}`,
       `--node-font-size:${node.fontSize || (node.type === "text" ? 25 : 14)}px`,
-      `--node-text-color:${noteTextColor}`,
-      `--node-edit-bg:${noteTextColor === "#ffffff" ? "rgba(0,0,0,.22)" : "rgba(255,255,255,.52)"}`,
+      `--node-text-color:${nodeTextColor}`,
+      `--node-edit-bg:${automaticTextColor === "#ffffff" ? "rgba(0,0,0,.22)" : "rgba(255,255,255,.52)"}`,
       node.type === "note" ? `background:${node.color}` : "",
     ].join(";");
     if (node.type === "image") {
@@ -678,6 +698,20 @@ function renderCanvas() {
       nodeElement.appendChild(caption);
     } else {
       nodeElement.innerHTML = `<div class="content">${escapeHtml(node.text)}</div>`;
+      if (node.type === "task") {
+        const completeButton = document.createElement("button");
+        completeButton.type = "button";
+        completeButton.className = "task-complete-button";
+        completeButton.setAttribute("aria-label", "Complete and remove task");
+        completeButton.title = "Complete task";
+        completeButton.innerHTML = "&#10003;";
+        completeButton.addEventListener("pointerdown", (event) => event.stopPropagation());
+        completeButton.addEventListener("click", (event) => {
+          event.stopPropagation();
+          completeTask(node.id);
+        });
+        nodeElement.prepend(completeButton);
+      }
     }
     elements.world.appendChild(nodeElement);
   });
@@ -1605,6 +1639,7 @@ function applyLoadedBoard(board) {
     node.height = node.height || node.h;
     node.fontFamily = node.fontFamily || "DM Sans";
     node.fontSize = node.fontSize || (node.type === "text" ? 25 : 14);
+    node.textColor = node.textColor || null;
     if (node.type === "image") node.caption = node.caption || "";
   });
 
@@ -1923,7 +1958,8 @@ function buildExportSvg() {
     }
     const fontSize = node.fontSize || (node.type === "text" ? 25 : 14);
     const weight = node.type === "text" ? 700 : 600;
-    parts.push('<text x="' + (node.x + node.width / 2) + '" y="' + (node.y + node.height / 2 + fontSize / 3) + '" fill="#202630" font-size="' + fontSize + '" font-family="' + (node.fontFamily || "DM Sans") + '" font-weight="' + weight + '" text-anchor="middle">' + text + '</text>');
+    const exportTextColor = node.textColor || (node.type === "note" ? getReadableTextColor(node.color) : (node.type === "text" ? node.color : "#202630"));
+    parts.push('<text x="' + (node.x + node.width / 2) + '" y="' + (node.y + node.height / 2 + fontSize / 3) + '" fill="' + exportTextColor + '" font-size="' + fontSize + '" font-family="' + (node.fontFamily || "DM Sans") + '" font-weight="' + weight + '" text-anchor="middle">' + text + '</text>');
   });
 
   parts.push("</g></svg>");
@@ -2178,6 +2214,13 @@ function bindInterfaceEvents() {
     applyColorToSelection(state.color);
   });
 
+  document.querySelector("#textColorPicker").addEventListener("change", (event) => {
+    applyTextColorToSelection(event.target.value);
+  });
+  document.querySelector("#autoTextColorButton").addEventListener("click", () => {
+    applyTextColorToSelection(null);
+  });
+
   queryAll("#strokeWidths button").forEach((button) => {
     button.addEventListener("click", () => {
       state.strokeWidth = Number(button.dataset.width);
@@ -2364,6 +2407,23 @@ function applyColorToSelection(color) {
   node.color = color;
   renderCanvas();
   selectNode(node.id);
+}
+
+function applyTextColorToSelection(color) {
+  state.textColor = color;
+  const selectedElement = getSelectedNodeElement();
+  if (!selectedElement) {
+    updateTypographyControls();
+    return showToast(color ? "Writing color set for new objects" : "Automatic writing contrast enabled");
+  }
+  const node = getNodeById(selectedElement.dataset.id);
+  if (!node) return;
+  takeSnapshot();
+  node.textColor = color;
+  renderCanvas();
+  selectNode(node.id);
+  markUnsaved();
+  showToast(color ? "Writing color updated" : "Automatic writing contrast enabled");
 }
 
 function handleNodeDoubleClick(event) {
