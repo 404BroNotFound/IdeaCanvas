@@ -1273,7 +1273,7 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .nav-tool.active::before { content: ""; position: absolute; left: -7px; width: 3px; height: 20px; border-radius: 4px; background: #a99fff; box-shadow: 0 0 10px rgba(169,159,255,.62); }
 .selection-actions.visible { animation: selection-actions-in 170ms ease-out; }
 .selection-actions .danger-action { margin-left: 2px; font-weight: 750; }
-.selection-actions .danger-action::before { content: "Ã—"; margin-right: 5px; font-size: 15px; line-height: 1; }
+.selection-actions .danger-action::before { content: "\00D7"; margin-right: 5px; font-size: 15px; line-height: 1; }
 .canvas-controls button, .selection-actions button, .header-actions button { transition: color 150ms ease, background 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease; }
 .canvas-controls button:active, .selection-actions button:active, .header-actions button:active { transform: scale(.96); }
 @keyframes selection-actions-in { from { opacity: 0; transform: translate(-50%, 8px) scale(.98); } }
@@ -1283,3 +1283,4 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .account-legal { display: flex; justify-content: center; gap: 8px; margin-top: 14px; }
 .account-legal a { color: var(--subtle); }
 .account-legal a:hover { color: var(--violet); }
+.canvas-viewport[data-tool="select"] .node.selected .content { cursor: text; }

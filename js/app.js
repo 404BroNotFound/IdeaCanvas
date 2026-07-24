@@ -101,7 +101,7 @@ function applyTheme(theme, { persist = true } = {}) {
   const button = document.querySelector("#themeToggleButton");
   button.setAttribute("aria-pressed", String(isDark));
   button.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
-  button.querySelector("span").textContent = isDark ? "Light" : "Dark";
+  button.querySelector("span").textContent = isDark ? "\u2600" : "\u263E";
   if (persist) localStorage.setItem(THEME_KEY, theme);
 }
 
@@ -683,7 +683,31 @@ function dismissWelcome() {
   return true;
 }
 
-function beginNodeEditing(node) {
+function placeCaretAtPoint(content, clientX, clientY) {
+  const selection = window.getSelection();
+  let range = null;
+  if (document.caretPositionFromPoint) {
+    const position = document.caretPositionFromPoint(clientX, clientY);
+    if (position && content.contains(position.offsetNode)) {
+      range = document.createRange();
+      range.setStart(position.offsetNode, position.offset);
+    }
+  } else if (document.caretRangeFromPoint) {
+    const candidate = document.caretRangeFromPoint(clientX, clientY);
+    if (candidate && content.contains(candidate.startContainer)) range = candidate;
+  }
+  if (!range) {
+    range = document.createRange();
+    range.selectNodeContents(content);
+    range.collapse(false);
+  } else {
+    range.collapse(true);
+  }
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+function beginNodeEditing(node, { selectAll = true, clientX = null, clientY = null } = {}) {
   requestAnimationFrame(() => {
     const nodeElement = document.querySelector(`[data-id="${node.id}"]`);
     if (!nodeElement) return;
@@ -693,7 +717,8 @@ function beginNodeEditing(node) {
     const content = nodeElement.querySelector(".content");
     content.contentEditable = "true";
     content.focus();
-    document.execCommand("selectAll", false, null);
+    if (selectAll) document.execCommand("selectAll", false, null);
+    else placeCaretAtPoint(content, clientX, clientY);
   });
 }
 
@@ -822,6 +847,16 @@ function handlePointerDown(event) {
     if (node.locked) {
       selectNode(node.id);
       showToast("Object is locked");
+      return;
+    }
+    const textContent = event.target.closest(".content");
+    if (textContent?.isContentEditable) return;
+    if (nodeElement.classList.contains("selected") && textContent) {
+      beginNodeEditing(node, {
+        selectAll: false,
+        clientX: event.clientX,
+        clientY: event.clientY,
+      });
       return;
     }
     selectNode(node.id);
@@ -2318,11 +2353,14 @@ function applyColorToSelection(color) {
 function handleNodeDoubleClick(event) {
   const content = event.target.closest(".node")?.querySelector(".content");
   if (!content) return;
+  if (content.isContentEditable) return;
   const node = getNodeById(content.closest(".node").dataset.id);
   if (node.locked) return showToast("Unlock this object to edit it");
-  takeSnapshot();
-  content.contentEditable = "true";
-  content.focus();
+  beginNodeEditing(node, {
+    selectAll: false,
+    clientX: event.clientX,
+    clientY: event.clientY,
+  });
 }
 
 function handleNodeInput(event) {
